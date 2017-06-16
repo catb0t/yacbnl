@@ -28,19 +28,23 @@ CMD_ARGS ?=
 
 FILES := $(FILENAME).c $(FILENAME).h
 
-all: normal mem test
+all: hdr normal mem test
+
+hdr: bignum.h bn_common.h bna.h
+	./build.sh
 
 normal: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./$(OUT_FILENAME)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/$(OUT_FILENAME)
 	@echo
 
 mem: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) $(MEM_OPTS) -o ./memdebug_$(OUT_FILENAME)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) $(MEM_OPTS) -o ./bin/memdebug_$(OUT_FILENAME)
 	@echo
 
 test: $(FILES)
-	$(CC) -lcriterion test_$(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) $(MEM_OPTS) -o ./test_$(OUT_FILENAME)
+	$(CC) -lcriterion test_$(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) $(MEM_OPTS) -o ./bin/test_$(OUT_FILENAME)
 	@echo
 
 clean:
-	rm $(OUT_FILENAME) memdebug_$(OUT_FILENAME) test_$(OUT_FILENAME)
+	rm ./bin/* -r
+	rm ./yacbnl.full.h
