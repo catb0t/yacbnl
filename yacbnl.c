@@ -2,7 +2,9 @@
 
 int main(void) {
 
-  printf("%d\n", count_frac_digits("1234.0002"));
+  atom_t* a = bna_from_flot(1.234f, BN_NONE);
+  free(a);
+  //printf("%d\n", count_frac_digits("1234.0002"));
 /*  uint8_t* a = to_bn_array(0, 12345678901234567890U, FL_SIGN);
   for (atom_t i = 0; i < a[0] + 3; i++) {
     printf("%d ", a[i]);

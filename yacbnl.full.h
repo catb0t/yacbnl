@@ -234,8 +234,8 @@ atom_t indexable_digits_u64 (const uint64_t x) {
 atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 #ifdef PREFER_CHAR_CONV
 
-  char* const str = alloc(21, char);
-  snprintf(str, 20, "%" PRIu64 "", x);
+  char* const str = alloc(22, char);
+  snprintf(str, 21, "%" PRIu64 "", x);
 
   char d = str[n];
   free(str);
@@ -303,7 +303,7 @@ static atom_t* impl_to_bn_array_ldbl (const ldbl_t ldbl, const atom_t flags) {
     then why are you running this code anyways
   */
   snprintf(fullstr, MAX_SIGFIGS + 1 /* sep */, "%.252LG", ldbl);
-
+  printf("%s %zu  \n", fullstr, strnlen(fullstr, 252));
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV

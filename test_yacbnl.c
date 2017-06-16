@@ -27,7 +27,7 @@ Test(t, getn) {
 
   x = 12345678901234567890U;
   for (size_t i = 0; i < 20; i++) {
-    //printf("%zu ", i);
+    //printf("%ld %d\n", (i + 1) % 10, get_left_nth_digit(x, (atom_t) i));
     cr_assert_eq((i + 1) % 10, get_left_nth_digit(x, (atom_t) i));
   }
 }
@@ -36,14 +36,14 @@ Test(t, bna_u64) {
 
   // zero
   atom_t
-    * a = to_bn_array(0, 0, 0),
+    * a = to_bn_array(0, 0, BN_NONE),
     z[] = { 0, 0, 0 };
 
   cr_assert_arr_eq(z, a, sz(HEADER_OFFSET, atom_t));
   free(a);
 
   // 1
-  a = to_bn_array(0, 1, 0);
+  a = to_bn_array(0, 1, BN_NONE);
 
   atom_t s[] = { 1, 0, 0, 1 };
 
@@ -51,7 +51,7 @@ Test(t, bna_u64) {
   free(a);
 
   // 23
-  a = to_bn_array(0, 23, 0);
+  a = to_bn_array(0, 23, BN_NONE);
   atom_t s2[] = { 2, 0, 0, 2, 3 };
 
   cr_assert_arr_eq(s2, a, sz(2 + HEADER_OFFSET, atom_t));
@@ -91,9 +91,15 @@ Test(t, bna_s64) {
   free(a);
 }
 
-/*Test(t, bna_ldbl) {
+Test(t, bna_ldbl) {
   atom_t
-    * a = to_bn_array(1.f, 0)
-    z[] = ;
+    * a = to_bn_array((ldbl_t) 1.234, 0, BN_NONE),
+    z[] = { 1, 3, 0, 1, 2, 3, 4 };
 
-}*/
+  printf("%d %d %d\n", a[0], a[1], a[2]);
+  printf("%d %d %d\n", z[0], z[1], z[2]);
+
+  cr_assert_arr_eq(z, a, sz(4 + HEADER_OFFSET, atom_t));
+
+  free(a);
+}
