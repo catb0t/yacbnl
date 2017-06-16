@@ -78,9 +78,8 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 
 #else /* ! PREFER_CHAR_CONV */
 
-  const long double
-    tpow  = pow(10, indexable_digits_u64(x) - n),
-    ldivr = ((long double) x) / tpow;
+  const ldbl_t tpow  = pow(10, indexable_digits_u64(x) - n),
+               ldivr = ((ldbl_t) x) / tpow;
 
   //printf("%LG %LG\n", tpow, ldivr);
   return (atom_t) (((uint64_t) ldivr) % 10);
@@ -181,9 +180,8 @@ static atom_t* impl_to_bn_array_ldbl (const ldbl_t ldbl, const atom_t flags) {
 }
 
 static atom_t* impl_to_bn_array_u64 (const uint64_t u64, const atom_t flags) {
-  const atom_t
-    ndigits             = count_digits_u64(u64),
-    init[HEADER_OFFSET] = { ndigits, 0, flags };
+  const atom_t ndigits             = count_digits_u64(u64),
+               init[HEADER_OFFSET] = { ndigits, 0, flags };
 
   atom_t* bn_tlated = alloc(ndigits + HEADER_OFFSET, atom_t);
 

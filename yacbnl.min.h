@@ -15,31 +15,31 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include<stdint.h>
-#include<string.h>
-#include<math.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdbool.h>
-#include<inttypes.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <inttypes.h>
 
 #ifndef BN_COMMON_H
 #define BN_COMMON_H
 
-#define HEADER_OFFSET ((atom_t)3)
+#define HEADER_OFFSET ((atom_t) 3)
 
 #ifndef MAX_SIGFIGS
-#define MAX_SIGFIGS ((UINT8_MAX*2)-(HEADER_OFFSET*2))
+#define MAX_SIGFIGS ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
 #endif
 
 #ifdef PREFER_CHAR_CONV
-#pragma message("preferring slower O(n)char operations over O(1)floating point math")
+#pragma message("preferring slower O(n) char operations over O(1) floating point math")
 #endif
 
-#define sz(n,type) (((size_t)n)*(sizeof(type)))
-#define alloc(size,type) malloc(((size_t)size)*sizeof(type))
-#define zalloc(size,type) calloc(((size_t)size),sizeof(type))
-#define bna_real_len(bna) ((bna)[0]+(bna)[1]+HEADER_OFFSET)
+#define sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+#define alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+#define zalloc(size, type) calloc(( (size_t) size), sizeof (type))
+#define bna_real_len(bna) ((bna)[0] + (bna)[1] + HEADER_OFFSET)
 
 #define FL_SIGN 0x01
 #define FL_NAN 0x02
@@ -56,11 +56,11 @@ static atom_t*impl_to_bn_array_ldbl(const ldbl_t ldbl,const atom_t flags);static
 #ifdef PREFER_CHAR_CONV
 char*const str=alloc(21,char);snprintf(str,20,"%" PRIu64 "",x);char d=str[n];free(str);return(atom_t)((unsigned)d-'0');
 #else
-const long doubletpow=pow(10,indexable_digits_u64(x)-n),ldivr=((long double)x)/tpow;return(atom_t)(((uint64_t)ldivr)%10);
+const ldbl_t tpow=pow(10,indexable_digits_u64(x)-n),ldivr=((ldbl_t)x)/tpow;return(atom_t)(((uint64_t)ldivr)%10);
 #endif
 }
-#define bna_from_uint(num,flags) (to_bn_array(0.f,(uint64_t)num,flags))
-#define bna_from_flot(flot,flags) (to_bn_array((ldbl_t)flot,0,flags))
+#define bna_from_uint(num, flags) (to_bn_array(0.f, (uint64_t) num, flags))
+#define bna_from_flot(flot, flags) (to_bn_array((ldbl_t) flot, 0, flags))
 atom_t*to_bn_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t flags_in){const atom_t flags=ldbl_in<0 ? flags_in|FL_SIGN : flags_in;const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;if(!compare_eps(ldbl,0.f,1e-11)){return impl_to_bn_array_ldbl(ldbl,flags);}else if(0!=u64){return impl_to_bn_array_u64(u64,flags);}else{const atom_t zero[]={0,0,flags};return memcpy(alloc(HEADER_OFFSET,atom_t),&zero,sz(HEADER_OFFSET,atom_t));}return NULL;}static atom_t*impl_to_bn_array_ldbl(const ldbl_t ldbl,const atom_t flags){char*const fullstr=alloc(MAX_SIGFIGS+3,char);snprintf(fullstr,MAX_SIGFIGS+1,"%.252LG",ldbl);const atom_t
 #ifdef PREFER_CHAR_CONV
 nint_digits=(atom_t)strcspn(fullstr,"."),
@@ -73,7 +73,7 @@ char*const integ_str=strndup(fullstr,nint_digits);for(atom_t i=0;i<nint_digits;i
 #else
 for(atom_t i=0;i<nint_digits;i++){bn_tlated[i+HEADER_OFFSET]=get_left_nth_digit((uint64_t)floorl(ldbl),i);}
 #endif
-const char*const frac_str=fullstr+find_frac_beginning(fullstr);for(size_t i=0;i<nflot_digits;i++){bn_tlated[i+HEADER_OFFSET+nint_digits]=(atom_t)((unsigned)frac_str[i]-'0');}free(fullstr);return bn_tlated;}static atom_t*impl_to_bn_array_u64(const uint64_t u64,const atom_t flags){const atom_tndigits=count_digits_u64(u64),init[HEADER_OFFSET]={ndigits,0,flags};atom_t*bn_tlated=alloc(ndigits+HEADER_OFFSET,atom_t);memcpy(bn_tlated,&init,sz(HEADER_OFFSET,atom_t));
+const char*const frac_str=fullstr+find_frac_beginning(fullstr);for(size_t i=0;i<nflot_digits;i++){bn_tlated[i+HEADER_OFFSET+nint_digits]=(atom_t)((unsigned)frac_str[i]-'0');}free(fullstr);return bn_tlated;}static atom_t*impl_to_bn_array_u64(const uint64_t u64,const atom_t flags){const atom_t ndigits=count_digits_u64(u64),init[HEADER_OFFSET]={ndigits,0,flags};atom_t*bn_tlated=alloc(ndigits+HEADER_OFFSET,atom_t);memcpy(bn_tlated,&init,sz(HEADER_OFFSET,atom_t));
 #ifdef PREFER_CHAR_CONV
 char*const str=alloc(ndigits+2,char);snprintf(str,21,"%" PRIu64 "",u64);for(atom_t i=0;i<ndigits;i++){bn_tlated[i+HEADER_OFFSET]=(atom_t)((unsigned)str[i]-'0');}free(str);
 #else

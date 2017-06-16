@@ -5,9 +5,9 @@
 #     under certain conditions; read LICENSE for details.
 
 import argparse
-# import sys
+import sys
 import re
-# import os  # SEEK_END etc.
+import os  # SEEK_END etc.
 
 # Ops: ops that may be spaced out in the code but we can trim the whitespace before and after
 # Spaced ops are operators that we need to append with one trailing space because of their syntax (e.g. keywords).
@@ -83,19 +83,7 @@ def minify_operator(op):
     repl = op
     if op in SPACED_OPS:
         repl += " "
-    def replace_function(string):
-        if is_macro_declaration(string):
-            print string
-            get_macro_parts = re.compile(r"^(#define)\s+([A-Za-z0-9_]+)(?:\s+(.*?)\s+)?$")
-            macro, name, val = get_macro_parts.match(string).groups()
-            # if the last part exists we can minify it too
-            if val is not None:
-                for op in OPS:
-                    val = minify_operator(op)(val)
-
-            return macro + " " + name + " " + (val or "")
-        return regex.sub(repl, string)
-    return replace_function
+    return lambda string: string if is_preprocessor_directive(string) else regex.sub(repl, string)
 
 
 def fix_spaced_ops(minified_txt):
@@ -156,8 +144,6 @@ def reinsert_preprocessor_newlines(lines):
 def is_preprocessor_directive(line):
     return line.startswith(PREPROCESSOR_TOKEN)
 
-def is_macro_declaration(line):
-    return line.startswith(PREPROCESSOR_TOKEN + "define ")
 
 def minify_source(orig_source, args=None):
     """
