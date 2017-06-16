@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <inttypes.h>
-
 /*
   YACBNL Yet Another C BigNum Library
   Copyright (C) 2017 Cat Stevens
