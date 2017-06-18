@@ -3,8 +3,10 @@
 
 #include "bn_common.h"
 
-static atom_t* impl_to_bn_array_ldbl (const ldbl_t ldbl, const atom_t flags);
-static atom_t*  impl_to_bn_array_u64 (const uint64_t u64, const atom_t flags);
+static atom_t*    impl_to_dec_array_ldbl (const ldbl_t ldbl,  const atom_t flags);
+static atom_t*     impl_to_dec_array_u64 (const uint64_t u64, const atom_t flags);
+static atom_t* impl_to_dec_bigarray_ldbl (const ldbl_t ldbl,  const atom_t flags);
+static atom_t*  impl_to_dec_bigarray_u64 (const uint64_t u64, const atom_t flags);
 
 // i think this is how we compare ie3-754 numbers instead of == in C
 bool compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps) {
@@ -98,9 +100,9 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 
   for example, signed zero would best be represented by to_bn_array(0, 0, FL_SIGN).
 */
-#define bna_from_uint(num, flags)  (to_bn_array(0.f, (uint64_t) num, flags))
-#define bna_from_flot(flot, flags) (to_bn_array((ldbl_t) flot, 0, flags))
-atom_t* to_bn_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t flags_in) {
+#define da_from_uint(num, flags)  (to_bn_array(0.f, (uint64_t) num, flags))
+#define da_from_flot(flot, flags) (to_bn_array((ldbl_t) flot, 0, flags))
+atom_t* to_dec_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t flags_in) {
 
   const atom_t flags = ldbl_in < 0 ? flags_in | FL_SIGN : flags_in;
   const ldbl_t ldbl  = ldbl_in < 0 ? fabsl(ldbl_in) : ldbl_in;
@@ -108,12 +110,12 @@ atom_t* to_bn_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t flag
   // not zero so we'll use it
   if ( ! compare_eps(ldbl, 0.f, 1e-11) ) {
 
-    return impl_to_bn_array_ldbl(ldbl, flags);
+    return impl_to_dec_array_ldbl(ldbl, flags);
 
   // use this instead
   } else if ( 0 != u64 ) {
 
-    return impl_to_bn_array_u64(u64, flags);
+    return impl_to_dec_array_u64(u64, flags);
 
   } else /* both are zero, just give zero */ {
     const atom_t zero[] = { 0, 0, flags };
@@ -128,7 +130,7 @@ atom_t* to_bn_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t flag
   return NULL;
 }
 
-static atom_t* impl_to_bn_array_ldbl (const ldbl_t ldbl, const atom_t flags) {
+static atom_t* impl_to_dec_array_ldbl (const ldbl_t ldbl, const atom_t flags) {
   // 504 = (255 * 2) - (HEADER_OFFSET * 2) usually but it probably won't all be used
   char* const fullstr = alloc(MAX_SIGFIGS + 3 /* separator + null */, char);
 
@@ -179,7 +181,7 @@ static atom_t* impl_to_bn_array_ldbl (const ldbl_t ldbl, const atom_t flags) {
   return bn_tlated;
 }
 
-static atom_t* impl_to_bn_array_u64 (const uint64_t u64, const atom_t flags) {
+static atom_t* impl_to_dec_array_u64 (const uint64_t u64, const atom_t flags) {
   const atom_t ndigits             = count_digits_u64(u64),
                init[HEADER_OFFSET] = { ndigits, 0, flags };
 
@@ -211,4 +213,42 @@ static atom_t* impl_to_bn_array_u64 (const uint64_t u64, const atom_t flags) {
   return bn_tlated;
 }
 
+atom_t* to_dec_bigarray (const ldbl_t ldbl_in, const uint64_t u64, const atom_t flags_in) {
+
+  const atom_t flags = ldbl_in < 0 ? flags_in | FL_SIGN : flags_in;
+  const ldbl_t ldbl  = ldbl_in < 0 ? fabsl(ldbl_in) : ldbl_in;
+
+  // not zero so we'll use it
+  if ( ! compare_eps(ldbl, 0.f, 1e-11) ) {
+
+    return impl_to_dec_bigarray_ldbl(ldbl, flags);
+
+  // use this instead
+  } else if ( 0 != u64 ) {
+
+    return impl_to_dec_bigarray_u64(u64, flags);
+
+  } else /* both are zero, just give zero */ {
+    const atom_t zero[] = { 0, 0, 0, 0, flags };
+
+    return memcpy(
+      alloc(HEADER_BIGOFFSET, atom_t),
+      &zero,
+      sz(HEADER_BIGOFFSET, atom_t)
+    );
+  }
+
+  return NULL;
+
+}
+
+static atom_t* impl_to_dec_bigarray_u64 (const uint64_t u64, const atom_t flags) {
+
+}
+
+static atom_t* impl_to_dec_bigarray_ldbl (const ldbl_t ldbl, const atom_t flags) {
+
+}
+
 #endif /* end of include guard: BNA_H */
+

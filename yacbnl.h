@@ -1,3 +1,3 @@
 #include "bn_common.h"
-#include "bignum.h"
-#include "bna.h"
+#include "dec.h"
+#include "quex.h"

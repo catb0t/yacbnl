@@ -1,5 +1,5 @@
 #!/bin/bash
-src=$(cat bn_common.h bignum.h bna.h | grep -v "#include")
+src=$(cat bn_common.h *.h | grep -v "#include")
 includes="#include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -29,7 +29,7 @@ $src" > yacbnl.full.h
 
 big=$(wc -c < yacbnl.full.h)
 
-minisrc=$(./minify.py yacbnl.full.h)
+minisrc=$(util/minify.py yacbnl.full.h)
 echo "$copyleft
 $minisrc" > yacbnl.min.h
 lil=$(wc -c < yacbnl.min.h)

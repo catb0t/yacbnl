@@ -25,9 +25,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <inttypes.h>
 
 #define HEADER_OFFSET ((atom_t) 3)
+#define HEADER_BIGOFFSET ((atom_t) 5)
 
 #ifndef MAX_SIGFIGS
   #define MAX_SIGFIGS   ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
@@ -80,16 +82,28 @@ typedef struct st_bignum_t {
   struct st_bignum_t* expt;
 } bignum_t;
 
+/* bignum_t */
 bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags, const bignum_t * const * const opt_vals);
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals);
 
+/* dec_t */
 atom_t     count_digits_u64 (const uint64_t x);
 atom_t indexable_digits_u64 (const uint64_t x);
 atom_t   get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t    count_frac_digits (const char* const str);
 atom_t  find_frac_beginning (const char* const str);
-atom_t*         to_bn_array (const ldbl_t ldbl, const uint64_t u64, const atom_t flags);
+atom_t*        to_dec_array (const ldbl_t ldbl, const uint64_t u64, const atom_t flags);
+atom_t*     to_dec_bigarray (const ldbl_t ldbl, const uint64_t u64, const atom_t flags);
 
+/* quex_t / zenzic_t */
+atom_t* to_zenzic_bigarray (const ldbl_t ldbl, const uint64_t u64, const atom_t flags);
 bool compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps);
+
+/* n byte addressing stuff */
+void     u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
+uint16_t twoba_to_u16 (const atom_t ah, const atom_t al);
+
+atom_t*  u64_to_octba (const uint64_t n);
+uint64_t octba_to_u64 (const atom_t* const bytes);
 
 #endif /* end of include guard: BN_COMMON_H */
