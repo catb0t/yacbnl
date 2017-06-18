@@ -10,7 +10,8 @@ uint16_t twoba_to_u16 (const atom_t ah, const atom_t al) {
   return (uint16_t) (ah << CHAR_BIT) | al;
 }
 
-atom_t* u64_to_octba (const uint64_t n) {
+/*atom_t* u64_to_octba (const uint64_t n) {
+
   return NULL;
 }
 
@@ -23,3 +24,4 @@ uint64_t octba_to_u64 (const atom_t* const bytes) {
 
   return result;
 }
+*/
