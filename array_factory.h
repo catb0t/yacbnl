@@ -5,11 +5,41 @@
 #include "misc_util.h"
 #include "addr_interp.h"
 
+#define    meta_is_base256(metadata) (metadata & TYP_ZENZ)
+#define        meta_is_big(metadata) (metadata & TYP_BIG)
+#define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
+
 static atom_t*    impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
 static atom_t*     impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
-//static atom_t* impl_to_digit_bigarray_ldbl (const ldbl_t ldbl,  const atom_t flags, const atom_t metadata);
-//static atom_t*  impl_to_digit_bigarray_u64 (const uint64_t u64, const atom_t flags, const atom_t metadata);
 
+/* create the first 4 or 6 bytes at the beginning of every digit array */
+static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
+
+  const atom_t  hdrlen = meta_header_offset(metadata);
+  atom_t* const header = zalloc(hdrlen, atom_t);
+
+  /* first byte is the type and base */
+  header[0]          = metadata;
+  /* last byte is flags */
+  header[hdrlen - 1] = flags;
+
+  if ( meta_is_big(metadata) ) {
+    atom_t lens[] = { 0, 0, 0, 0 };
+
+    /* set the lengths by using the addresses of the array elements */
+    u16_to_twoba(int_digits,  lens + 0, lens + 1);
+    u16_to_twoba(flot_digits, lens + 2, lens + 3);
+
+    /* paste four bytes between the metadata and flags */
+    memcpy(header + 1, &lens, sz(4, atom_t) );
+
+  } else {
+    header[1] = (atom_t) int_digits;
+    header[2] = (atom_t) flot_digits;
+  }
+
+  return header;
+}
 
 /*
   ldbl_t, uint64_t, atom_t -> atom_t*
@@ -38,12 +68,7 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
     return impl_to_digit_array_u64(u64, metadata, flags);
 
   } else /* both are zero, just give zero */ {
-    atom_t* const zero = zalloc(metadata & TYP_BIG ? HEADER_OFFSET_BIG : HEADER_OFFSET, atom_t);
-
-    zero[0]                     = metadata;
-    zero[HEADER_OFFSET_BIG - 1] = flags;
-
-    return zero;
+    return make_array_header(metadata, 0, 0, flags);
   }
 
   return NULL;
@@ -53,10 +78,11 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadata, const atom_t flags) {
 
-  const bool using_base256 = metadata & TYP_ZENZ;
-  const bool using_bigaddr = metadata & TYP_BIG;
+  const atom_t hdrlen = meta_header_offset(metadata);
 
-  //
+  const bool using_base256 = metadata & TYP_ZENZ;
+  //const bool using_bigaddr = meta_is_big(metadata);
+
   // 504 = (255 * 2) - (HEADER_OFFSET * 2) usually but it probably won't all be used
   char* const fullstr = alloc(MAX_SIGFIGS + 3 /* separator + null */, char);
 
@@ -76,74 +102,97 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV
-    nint_digits         = (atom_t) strcspn(fullstr, "."),
+    nint_digits  = (atom_t) strcspn(fullstr, "."),
 #else /* ! PREFER_CHAR_CONV */
-    nint_digits         = count_digits_u64( (uint64_t) floorl(ldbl) ),
+    nint_digits  = count_digits_u64( (uint64_t) floorl(ldbl) ),
 #endif /* PREFER_CHAR_CONV */
-    nflot_digits        = count_frac_digits(fullstr),
-    init[HEADER_OFFSET] = { nint_digits, nflot_digits, flags };
+    nflot_digits = count_frac_digits(fullstr);
 
-  atom_t* bn_tlated = alloc(nint_digits + nflot_digits + HEADER_OFFSET, atom_t);
+  atom_t* bn_tlated = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
+       * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
 
-  memcpy(bn_tlated, &init, sz(HEADER_OFFSET, atom_t));
+  memcpy(bn_tlated, &init, sz(hdrlen, atom_t));
 
-  /* going to do the integral component */
+  if (using_base256) {
+
+  } else {
+
+      /* going to do the integral component */
 #ifdef PREFER_CHAR_CONV
-  char* const integ_str = strndup(fullstr, nint_digits);
-  for (atom_t i = 0; i < nint_digits; i++) {
-    bn_tlated[i + HEADER_OFFSET] = (atom_t) ((unsigned) integ_str[i] - '0');
-  }
-  free(integ_str);
+    char* const integ_str = strndup(fullstr, nint_digits);
+    for (atom_t i = 0; i < nint_digits; i++) {
+      bn_tlated[i + hdrlen] = (atom_t) ((unsigned) integ_str[i] - '0');
+    }
+    free(integ_str);
 #else /* ! PREFER_CHAR_CONV */
-  for (atom_t i = 0; i < nint_digits; i++) {
-    bn_tlated[i + HEADER_OFFSET] = get_left_nth_digit( (uint64_t) floorl(ldbl), i);
-  }
+    for (atom_t i = 0; i < nint_digits; i++) {
+      bn_tlated[i + hdrlen] = get_left_nth_digit( (uint64_t) floorl(ldbl), i);
+    }
 #endif /* PREFER_CHAR_CONV */
 
-  /* going to do the fractional component */
-  // must be done with string
+    /* going to do the fractional component */
+    // must be done with string
+    const char* const frac_str = fullstr + find_frac_beginning(fullstr);
 
-  const char* const frac_str = fullstr + find_frac_beginning(fullstr);
+    for (size_t i = 0; i < nflot_digits; i++) {
+      bn_tlated[i + hdrlen + nint_digits] = (atom_t) ((unsigned) frac_str[i] - '0');
+    }
 
-  for (size_t i = 0; i < nflot_digits; i++) {
-    bn_tlated[i + HEADER_OFFSET + nint_digits] = (atom_t) ((unsigned) frac_str[i] - '0');
   }
 
-  free(fullstr);
+  free(init), free(fullstr);
   return bn_tlated;
-}
+} /* impl_to_digit_array_ldbl */
 
 static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags) {
-  const atom_t ndigits             = count_digits_u64(u64),
-               init[HEADER_OFFSET] = { ndigits, 0, flags };
 
-  atom_t* bn_tlated = alloc(ndigits + HEADER_OFFSET, atom_t);
+  const bool using_base256 = metadata & TYP_ZENZ;
 
-  memcpy(bn_tlated, &init, sz(HEADER_OFFSET, atom_t));
+  const atom_t ndigits = count_digits_u64(u64),
+                hdrlen = meta_header_offset(metadata);
+
+
+  atom_t* bn_tlated = alloc(ndigits + hdrlen, atom_t),
+       * const init = make_array_header(metadata, ndigits, 0, flags);
+
+  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+
+  if (using_base256) {
+    char* const str = alloc( ndigits + /* null term */ 2, char);
+    snprintf(str, 21, "%" PRIu64 "", u64);
+
+
+
+    free(str);
+
+  } else {
 
 #ifdef PREFER_CHAR_CONV
 
-  /* here begins the string implementation */
-  char* const str = alloc( ndigits + /* null term */ 2, char);
-  snprintf(str, 21, "%" PRIu64 "", u64);
+    /* here begins the string implementation */
+    char* const str = alloc( ndigits + /* null term */ 2, char);
+    snprintf(str, 21, "%" PRIu64 "", u64);
 
-  for (atom_t i = 0; i < ndigits; i++) {
-    bn_tlated[i + HEADER_OFFSET] = (atom_t) ((unsigned) str[i] - '0');
-  }
-  free(str);
-  /* here ends the string implementation */
+    for (atom_t i = 0; i < ndigits; i++) {
+      bn_tlated[i + hdrlen] = (atom_t) ((unsigned) str[i] - '0');
+    }
+    free(str);
+    /* here ends the string implementation */
 
 #else /* ! PREFER_CHAR_CONV (default) */
 
-  for (atom_t i = 0; i < ndigits; i++) {
-    //printf("%d %" PRIu64 "\n", i + HEADER_OFFSET, u64);
-    bn_tlated[i + HEADER_OFFSET] = get_left_nth_digit(u64, i);
-  }
+    for (atom_t i = 0; i < ndigits; i++) {
+      //printf("%d %" PRIu64 "\n", i + HEADER_OFFSET, u64);
+      bn_tlated[i + hdrlen] = get_left_nth_digit(u64, i);
+    }
 
 #endif /* PREFER_CHAR_CONV */
 
+  }
+
+  free(init);
   return bn_tlated;
-}
+} /* impl_to_digit_array_u64 */
 
 /* !! BIG !! */
 
@@ -156,5 +205,6 @@ static atom_t* impl_to_dec_bigarray_ldbl (const ldbl_t ldbl, const atom_t flags)
   return NULL;
 }
 */
+
 #endif /* end of include guard: BNA_H */
 

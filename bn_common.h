@@ -134,8 +134,13 @@ bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals
 /* array creation */
 atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t value_flags, const atom_t metadata);
 
-/* n byte addressing stuff */
+/* 2 byte addressing stuff */
 void     u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
 uint16_t twoba_to_u16 (const atom_t ah, const atom_t al);
+
+/* base 256 conversions */
+uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+atom_t*       array_reverse (const atom_t* const arr, const uint16_t len);
+atom_t*  u64_digits_to_b256 (const uint64_t value, uint16_t* const len);
 
 #endif /* end of include guard: BN_COMMON_H */
