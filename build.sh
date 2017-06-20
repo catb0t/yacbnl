@@ -1,5 +1,5 @@
 #!/bin/bash
-src=$(cat bn_common.h *.h | grep -v "#include")
+src=$(cat bn_common.h misc_util.h addr_interp.h base256.h array_factory.h bignum.h | grep -v "#include")
 includes="#include <stdint.h>
 #include <string.h>
 #include <math.h>

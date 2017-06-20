@@ -95,6 +95,8 @@ typedef struct st_bignum_t {
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
+#define B256_HIGH 256
+#define B10_HIGH  10
 
 /* composable flags */
 /* array types */
@@ -120,12 +122,17 @@ typedef enum {
 } bignum_flag_t;
 
 /* misc_util */
-bool            compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps);
-atom_t     count_digits_u64 (const uint64_t x);
-atom_t indexable_digits_u64 (const uint64_t x);
-atom_t   get_left_nth_digit (const uint64_t x, const atom_t n);
-atom_t    count_frac_digits (const char* const str);
-atom_t  find_frac_beginning (const char* const str);
+float                log256f (const float x);
+bool             compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps);
+atom_t      count_digits_u64 (const uint64_t x);
+atom_t  indexable_digits_u64 (const uint64_t x);
+atom_t count_b256_digits_u64 (const uint64_t x);
+atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
+atom_t     count_frac_digits (const char* const str);
+atom_t   find_frac_beginning (const char* const str);
+atom_t*         array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
+atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
+char*            str_reverse (const char* const str);
 
 /* bignum_t */
 bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags, const bignum_t * const * const opt_vals);
@@ -139,8 +146,8 @@ void     u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
 uint16_t twoba_to_u16 (const atom_t ah, const atom_t al);
 
 /* base 256 conversions */
-uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
-atom_t*       array_reverse (const atom_t* const arr, const uint16_t len);
-atom_t*  u64_digits_to_b256 (const uint64_t value, uint16_t* const len);
+uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
+atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
 
 #endif /* end of include guard: BN_COMMON_H */

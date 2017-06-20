@@ -26,7 +26,7 @@ bignum_t* bignum_ctor (
   }
 
   bignum_t st_bn = {
-    .value = to_dec_array(ldbl, u64, flags),
+    .value = to_digit_array(ldbl, u64, flags, 0),
     .imgry = cx
       ? memcpy(
           alloc( bna_real_len(opt_vals[0]->value), atom_t),

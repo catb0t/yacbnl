@@ -30,7 +30,7 @@ FILES := $(FILENAME).c $(FILENAME).h
 
 all: hdr normal mem test
 
-hdr: bignum.h bn_common.h bna.h
+hdr: bignum.h bn_common.h array_factory.h
 	./build.sh
 
 normal: $(FILES)

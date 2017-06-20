@@ -1,3 +1,6 @@
+#ifndef MISC_UTIL_H
+#define MISC_UTIL_H
+
 #include "bn_common.h"
 
 // i think this is how we compare ie3-754 numbers instead of == in C
@@ -80,3 +83,66 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 
 #endif /* PREFER_CHAR_CONV */
 }
+
+char* str_reverse (const char* const str) {
+  if ( NULL == str ) { return NULL; }
+
+  size_t len = strnlen(str, MAX_SIGFIGS);
+  char* newp;
+
+  if ( len < 2 ) {
+    newp = strndup(str, len);
+
+  } else {
+    newp = alloc(len + 1, char);
+
+    size_t i, j;
+    for (i = 0, j = len - 1; i < len; i++, j--) {
+      newp[i] = str[j];
+      //printf("i: %zu, j: %zu, ic: %c, ij: %c\n", i, j, newp[i], str[j]);
+    }
+
+    newp[i] = '\0';
+  }
+
+  return newp;
+}
+
+float log256f (const float x) {
+  return logf(x) / logf(256);
+}
+
+atom_t count_b256_digits_u64 (const uint64_t x) {
+  return (atom_t) floorf( log256f( (float) x ) + 1.f);
+}
+
+atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
+
+  atom_t* result = zalloc(len, atom_t);
+
+  if (len) {
+    for (uint16_t i = 0; i < len; i++) {
+      result[i] = arr[ i - len ];
+    }
+  }
+
+  return result;
+}
+
+atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
+  if (! (a_len + b_len) ) {
+    return alloc(0, atom_t);
+  }
+
+  else if (a_len == a_len + b_len) {
+    return memcpy(alloc(a_len, atom_t), a, a_len);
+
+  } else if (b_len == a_len + b_len) {
+    return memcpy(alloc(b_len, atom_t), b, b_len);
+  }
+
+  atom_t* const res = memcpy( alloc(a_len + b_len, atom_t) , a, a_len);
+  return              memcpy( res + a_len, b, b_len);
+}
+
+#endif /* end of include guard: MISC_UTIL_H */
