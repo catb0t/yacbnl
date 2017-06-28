@@ -305,7 +305,7 @@ void u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
 
 uint16_t twoba_to_u16 (const atom_t ah, const atom_t al) {
   // put the high 8 bits at the top and the rest at the bottom
-  return (uint16_t) ((ah << CHAR_BIT) | (atom_t) al);
+  return (uint16_t) ( (ah << CHAR_BIT) | (atom_t) al);
 }
 
 /*atom_t* u64_to_octba (const uint64_t n) {
@@ -409,8 +409,8 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
 #define        meta_is_big(metadata) (metadata & TYP_BIG)
 #define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
 
-static atom_t*    impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
-static atom_t*     impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
+static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
+static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
 
 /* create the first 4 or 6 bytes at the beginning of every digit array */
 static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {

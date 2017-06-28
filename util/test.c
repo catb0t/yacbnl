@@ -1,4 +1,4 @@
-#include "base256.h"
+#include "../base256.h"
 
 int main(void) {
 /*  atom_t a[] = { 184, 255 };

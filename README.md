@@ -19,3 +19,9 @@ written in C99 and C11. does not compile in C++; no plans for this currently. yo
 the tests need the excellent criterion testing framework http://github.com/snaipe/criterion
 
 binaries I accidentally commit are unoptimised, debug ELFs built on and for Linux x64 kernel 4.x.
+
+list of generated files:
+
+- test_yacbnl.c (by concat_tests.sh)
+- yacbnl.full.h (by build.sh)
+- yacbnl.min.h  (by build.sh)

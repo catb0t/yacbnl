@@ -9,8 +9,8 @@
 #define        meta_is_big(metadata) (metadata & TYP_BIG)
 #define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
 
-static atom_t*    impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
-static atom_t*     impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
+static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
+static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
 
 /* create the first 4 or 6 bytes at the beginning of every digit array */
 static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
