@@ -1,12 +1,15 @@
+#include "../addr_interp.h"
 #include "../yacbnl.h"
 
 int main(void) {
-  // 23
-  atom_t* a = to_digit_array(0, 23, BN_NONE, 0);
-  atom_t s2[] = { 2, 0, 0, 0, 2, 3 };
+  atom_t
+    * a = to_digit_array((ldbl_t) 1.234, 0, BN_NONE, 0),
+    z[HEADER_OFFSET + 4] = { 0, 1, 3, 0, 1, 2, 3, 4 };
+
+  printf("a: %d %d %d\n", a[0], a[1], a[2]);
+  printf("z: %d %d %d\n", z[0], z[1], z[2]);
 
   free(a);
-
 
 /*  atom_t a[] = { 184, 255 };
   printf("%" PRIu64 "\n", b256_to_u64_digits(a, 3));

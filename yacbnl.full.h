@@ -38,8 +38,8 @@
   #define MAX_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
 #endif
 
-#ifndef PRIMITIVE_PRECISION
-  #define PRIMITIVE_PRECISION 24
+#ifndef MAX_DOUBLE_KEPT_FIGS
+  #define MAX_DOUBLE_KEPT_FIGS 200
 #endif
 
 #ifdef PREFER_CHAR_CONV
@@ -495,13 +495,8 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     - have a hardware long double that can preserve so many sigfigs
     then why are you running this code anyways
   */
-  snprintf(
-    fullstr,
-    MAX_SIGFIGS + 1 /* sep */,
-    "%." stringify(PRIMITIVE_PRECISION) "LG",
-    ldbl
-  );
-  printf("%s %zu  \n", fullstr, strnlen(fullstr, PRIMITIVE_PRECISION));
+  snprintf(fullstr, MAX_SIGFIGS + 1 /* sep */, "%LG", ldbl);
+  printf("%LG, %s_%zu  \n", ldbl, fullstr, strnlen(fullstr, MAX_DOUBLE_KEPT_FIGS));
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
@@ -512,10 +507,12 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 #endif /* PREFER_CHAR_CONV */
     nflot_digits = count_frac_digits(fullstr);
 
+  printf("digits: %d %d\n", nint_digits, nflot_digits);
+
   atom_t* bn_tlated = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
        * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
 
-  memcpy(bn_tlated, &init, sz(hdrlen, atom_t));
+  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
 
   if (using_base256) {
 

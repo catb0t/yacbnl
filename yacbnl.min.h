@@ -37,8 +37,8 @@
 #define MAX_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
 #endif
 
-#ifndef PRIMITIVE_PRECISION
-#define PRIMITIVE_PRECISION 24
+#ifndef MAX_DOUBLE_KEPT_FIGS
+#define MAX_DOUBLE_KEPT_FIGS 200
 #endif
 
 #ifdef PREFER_CHAR_CONV
@@ -84,13 +84,13 @@ atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool lit
 #define meta_is_base256(metadata) (metadata & TYP_ZENZ)
 #define meta_is_big(metadata) (metadata & TYP_BIG)
 #define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
-static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags);static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags);static atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);atom_t*const header=zalloc(hdrlen,atom_t);header[0]=metadata;header[hdrlen-1]=flags;if(meta_is_big(metadata)){atom_t lens[]={0,0,0,0};u16_to_twoba(int_digits,lens+0,lens+1);u16_to_twoba(flot_digits,lens+2,lens+3);memcpy(header+1,&lens,sz(4,atom_t));}else{header[1]=(atom_t)int_digits;header[2]=(atom_t)flot_digits;}return header;}atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata){const atom_t flags=ldbl_in<0 ? value_flags|FL_SIGN : value_flags;const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;if(!compare_eps(ldbl,0.f,1e-11)){return impl_to_digit_array_ldbl(ldbl,metadata,flags);}else if(0!=u64){return impl_to_digit_array_u64(u64,metadata,flags);}else{return make_array_header(metadata,0,0,flags);}return NULL;}static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);const bool using_base256=metadata&TYP_ZENZ;char*const fullstr=alloc(MAX_SIGFIGS+3,char);snprintf(fullstr,MAX_SIGFIGS+1,"%." stringify(PRIMITIVE_PRECISION)"LG",ldbl);printf("%s%zu \n",fullstr,strnlen(fullstr,PRIMITIVE_PRECISION));const atom_t
+static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags);static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags);static atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);atom_t*const header=zalloc(hdrlen,atom_t);header[0]=metadata;header[hdrlen-1]=flags;if(meta_is_big(metadata)){atom_t lens[]={0,0,0,0};u16_to_twoba(int_digits,lens+0,lens+1);u16_to_twoba(flot_digits,lens+2,lens+3);memcpy(header+1,&lens,sz(4,atom_t));}else{header[1]=(atom_t)int_digits;header[2]=(atom_t)flot_digits;}return header;}atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata){const atom_t flags=ldbl_in<0 ? value_flags|FL_SIGN : value_flags;const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;if(!compare_eps(ldbl,0.f,1e-11)){return impl_to_digit_array_ldbl(ldbl,metadata,flags);}else if(0!=u64){return impl_to_digit_array_u64(u64,metadata,flags);}else{return make_array_header(metadata,0,0,flags);}return NULL;}static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);const bool using_base256=metadata&TYP_ZENZ;char*const fullstr=alloc(MAX_SIGFIGS+3,char);snprintf(fullstr,MAX_SIGFIGS+1,"%LG",ldbl);printf("%LG,%s_%zu \n",ldbl,fullstr,strnlen(fullstr,MAX_DOUBLE_KEPT_FIGS));const atom_t
 #ifdef PREFER_CHAR_CONV
 nint_digits=(atom_t)strcspn(fullstr,"."),
 #else 
 nint_digits=count_digits_u64((uint64_t)floorl(ldbl)),
 #endif 
-nflot_digits=count_frac_digits(fullstr);atom_t*bn_tlated=alloc(nint_digits+nflot_digits+hdrlen,atom_t),*const init=make_array_header(metadata,nint_digits,nflot_digits,flags);memcpy(bn_tlated,&init,sz(hdrlen,atom_t));if(using_base256){}else{
+nflot_digits=count_frac_digits(fullstr);printf("digits:%d%d\n",nint_digits,nflot_digits);atom_t*bn_tlated=alloc(nint_digits+nflot_digits+hdrlen,atom_t),*const init=make_array_header(metadata,nint_digits,nflot_digits,flags);memcpy(bn_tlated,init,sz(hdrlen,atom_t));if(using_base256){}else{
 #ifdef PREFER_CHAR_CONV
 char*const integ_str=strndup(fullstr,nint_digits);for(atom_t i=0;i<nint_digits;i++){bn_tlated[i+hdrlen]=(atom_t)((unsigned)integ_str[i]-'0');}free(integ_str);
 #else 
