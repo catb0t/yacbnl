@@ -297,15 +297,18 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
 }
 
 #endif /* end of include guard: MISC_UTIL_H */
+#ifndef ADDR_INTERP_H
+#define ADDR_INTERP_H
+
 
 void u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
-  *ah = (atom_t) (n >> (atom_t) CHAR_BIT);// high bits
+  *ah = (atom_t) (n >> (atom_t) 8);// high bits
   *al = (atom_t) (n &  (atom_t) 0xFF);     // low 8 bits
 }
 
 uint16_t twoba_to_u16 (const atom_t ah, const atom_t al) {
   // put the high 8 bits at the top and the rest at the bottom
-  return (uint16_t) ( (ah << CHAR_BIT) | (atom_t) al);
+  return (uint16_t) ( (ah << 8) | (atom_t) al);
 }
 
 /*atom_t* u64_to_octba (const uint64_t n) {
@@ -323,6 +326,7 @@ uint64_t octba_to_u64 (const atom_t* const bytes) {
   return result;
 }
 */
+#endif /* end of include guard: ADDR_INTERP_H */
 
 atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
 
@@ -556,12 +560,11 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
        * const init = make_array_header(metadata, ndigits, 0, flags);
 
   memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+  free(init);
 
   if (using_base256) {
     char* const str = alloc( ndigits + /* null term */ 2, char);
     snprintf(str, 21, "%" PRIu64 "", u64);
-
-
 
     free(str);
 
@@ -590,7 +593,6 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   }
 
-  free(init);
   return bn_tlated;
 } /* impl_to_digit_array_u64 */
 
