@@ -88,25 +88,38 @@ typedef struct st_bignum_t {
 
 } bignum_t;
 
-#define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
-#define  alloc(size, type) malloc(( (size_t) size) * sizeof (type))
-#define zalloc(size, type) calloc(( (size_t) size),  sizeof (type))
-#define  bna_real_len(bna) ((bna)[0] + (bna)[1] + HEADER_OFFSET)
-#define     macrogetval(x) #x
-#define       stringify(x) macrogetval(x)
-
-#define B256_HIGH 256
-#define B10_HIGH  10
+#define B256_HIGH 0x100
+#define B10_HIGH  0xA
 
 /* composable flags */
 /* array types */
-#define TYP_BIG  0x01 /* this array is big (2 byte addressing mode) */
-#define TYP_ZENZ 0x02 /* array uses base 256 rather than base 10 (from the word zenzizenzizenzic) */
+#define TYP_NONE  0x0
+#define TYP_BIG   0x01 /* this array is big (2 byte addressing mode) */
+#define TYP_ZENZ  0x02 /* array uses base 256 rather than base 10 (from the word zenzizenzizenzic) */
+#define TYP_OVERF 0x04 /* this array's intended value would overflow this array; combine its data with another */
+#define TYP_EXTN  0x08 /* this array is the extension of another array whose value is overflowed */
 
 /* these apply to number values themselves */
+#define FL_NONE 0x0
 #define FL_SIGN 0x01
 #define FL_NAN  0x02
 #define FL_INF  0x04
+
+#define    meta_is_base256(metadata) (metadata & TYP_ZENZ)
+#define        meta_is_big(metadata) (metadata & TYP_BIG)
+#define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
+
+#define    bna_is_base256(bna) (meta_is_base256(bna[0]))
+#define        bna_is_big(bna) (meta_is_big(bna[0]))
+#define bna_header_offset(bna) (meta_header_offset(bna[0]))
+#define      bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[0] + (bna)[1] + HEADER_OFFSET) )
+#define         bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
+
+#define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+#define  alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+#define zalloc(size, type) calloc(( (size_t) size),  sizeof (type))
+#define     macrogetval(x) #x
+#define       stringify(x) macrogetval(x)
 
 /* individual values */
 typedef enum {
@@ -142,8 +155,9 @@ bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals
 atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t value_flags, const atom_t metadata);
 
 /* 2 byte addressing stuff */
-void     u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
-uint16_t twoba_to_u16 (const atom_t ah, const atom_t al);
+void        samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
+uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
+uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* base 256 conversions */
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);

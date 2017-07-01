@@ -3,14 +3,18 @@
 
 #include "bn_common.h"
 
-void u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
+void samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
   *ah = (atom_t) (n >> (atom_t) 8);// high bits
   *al = (atom_t) (n &  (atom_t) 0xFF);     // low 8 bits
 }
 
-uint16_t twoba_to_u16 (const atom_t ah, const atom_t al) {
+uint16_t samb_twoba_to_u16 (const atom_t ah, const atom_t al) {
   // put the high 8 bits at the top and the rest at the bottom
   return (uint16_t) ( (ah << 8) | (atom_t) al);
+}
+
+uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
+  return samb_twoba_to_u16(arr[0], arr[1]);
 }
 
 /*atom_t* u64_to_octba (const uint64_t n) {

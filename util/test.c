@@ -3,7 +3,7 @@
 
 int main(void) {
   atom_t
-    * a = to_digit_array((ldbl_t) 1.234, 0, BN_NONE, 0),
+    * a = to_digit_array((ldbl_t) 1.234, 0, FL_NONE, 0),
     z[HEADER_OFFSET + 4] = { 0, 1, 3, 0, 1, 2, 3, 4 };
 
   printf("a: %d %d %d\n", a[0], a[1], a[2]);

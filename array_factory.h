@@ -5,10 +5,6 @@
 #include "misc_util.h"
 #include "addr_interp.h"
 
-#define    meta_is_base256(metadata) (metadata & TYP_ZENZ)
-#define        meta_is_big(metadata) (metadata & TYP_BIG)
-#define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
-
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
 static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
 
@@ -27,8 +23,8 @@ static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digi
     atom_t lens[] = { 0, 0, 0, 0 };
 
     /* set the lengths by using the addresses of the array elements */
-    u16_to_twoba(int_digits,  lens + 0, lens + 1);
-    u16_to_twoba(flot_digits, lens + 2, lens + 3);
+    samb_u16_to_twoba(int_digits,  lens + 0, lens + 1);
+    samb_u16_to_twoba(flot_digits, lens + 2, lens + 3);
 
     /* paste four bytes between the metadata and flags */
     memcpy(header + 1, &lens, sz(4, atom_t) );

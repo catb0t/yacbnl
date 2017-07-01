@@ -45,23 +45,36 @@
 #pragma message("preferring slower O(n) char operations over O(1) floating point math")
 #endif
 typedef long double ldbl_t;typedef uint8_t atom_t;typedef struct st_bignum_t{atom_t*value,*imgry,*fracl,*vextn;struct st_bignum_t*expt;}bignum_t;
-#define sz(n, type) ( ((size_t) n) * (sizeof (type)) )
-#define alloc(size, type) malloc(( (size_t) size) * sizeof (type))
-#define zalloc(size, type) calloc(( (size_t) size), sizeof (type))
-#define bna_real_len(bna) ((bna)[0] + (bna)[1] + HEADER_OFFSET)
-#define macrogetval(x) #x
-#define stringify(x) macrogetval(x)
+#define B256_HIGH 0x100
+#define B10_HIGH 0xA
 
-#define B256_HIGH 256
-#define B10_HIGH 10
-
+#define TYP_NONE 0x0
 #define TYP_BIG 0x01 
 #define TYP_ZENZ 0x02 
+#define TYP_OVERF 0x04 
+#define TYP_EXTN 0x08 
 
+#define FL_NONE 0x0
 #define FL_SIGN 0x01
 #define FL_NAN 0x02
 #define FL_INF 0x04
-typedef enum{BN_NONE=0,BN_SIGN=FL_SIGN,BN_SNAN=FL_SIGN|FL_NAN,BN_SINF=FL_SIGN|FL_INF,BN_NAN=FL_NAN,BN_INF=FL_INF}bignum_flag_t;float log256f(const float x);bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps);atom_t count_digits_u64(const uint64_t x);atom_t indexable_digits_u64(const uint64_t x);atom_t count_b256_digits_u64(const uint64_t x);atom_t get_left_nth_digit(const uint64_t x,const atom_t n);atom_t count_frac_digits(const char*const str);atom_t find_frac_beginning(const char*const str);atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len);atom_t*array_reverse(const atom_t*const arr,const uint16_t len);char*str_reverse(const char*const str);bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals);bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);void u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al);uint16_t twoba_to_u16(const atom_t ah,const atom_t al);uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len);atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len);atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian);
+
+#define meta_is_base256(metadata) (metadata & TYP_ZENZ)
+#define meta_is_big(metadata) (metadata & TYP_BIG)
+#define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
+
+#define bna_is_base256(bna) (meta_is_base256(bna[0]))
+#define bna_is_big(bna) (meta_is_big(bna[0]))
+#define bna_header_offset(bna) (meta_header_offset(bna[0]))
+#define bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[0] + (bna)[1] + HEADER_OFFSET) )
+#define bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
+
+#define sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+#define alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+#define zalloc(size, type) calloc(( (size_t) size), sizeof (type))
+#define macrogetval(x) #x
+#define stringify(x) macrogetval(x)
+typedef enum{BN_NONE=0,BN_SIGN=FL_SIGN,BN_SNAN=FL_SIGN|FL_NAN,BN_SINF=FL_SIGN|FL_INF,BN_NAN=FL_NAN,BN_INF=FL_INF}bignum_flag_t;float log256f(const float x);bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps);atom_t count_digits_u64(const uint64_t x);atom_t indexable_digits_u64(const uint64_t x);atom_t count_b256_digits_u64(const uint64_t x);atom_t get_left_nth_digit(const uint64_t x,const atom_t n);atom_t count_frac_digits(const char*const str);atom_t find_frac_beginning(const char*const str);atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len);atom_t*array_reverse(const atom_t*const arr,const uint16_t len);char*str_reverse(const char*const str);bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals);bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al);uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al);uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]);uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len);atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len);atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian);
 #endif 
 #ifndef MISC_UTIL_H
 #define MISC_UTIL_H
@@ -75,16 +88,12 @@ const ldbl_t tpow=pow(10,indexable_digits_u64(x)-n),ldivr=((ldbl_t)x)/tpow;retur
 #endif 
 #ifndef ADDR_INTERP_H
 #define ADDR_INTERP_H
-void u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al){*ah=(atom_t)(n>>(atom_t)8);*al=(atom_t)(n&(atom_t)0xFF);}uint16_t twoba_to_u16(const atom_t ah,const atom_t al){return(uint16_t)((ah<<8)|(atom_t)al);}
+void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al){*ah=(atom_t)(n>>(atom_t)8);*al=(atom_t)(n&(atom_t)0xFF);}uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al){return(uint16_t)((ah<<8)|(atom_t)al);}uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]){return samb_twoba_to_u16(arr[0],arr[1]);}
 #endif 
 atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian){if(!value||NULL==len){return zalloc(1,atom_t);}atom_t*result=zalloc(count_b256_digits_u64(value),atom_t);uint64_t tempr=value;uint16_t i=0;for(;tempr;i++){result[i]=(atom_t)tempr%B256_HIGH;tempr=(uint64_t)floorl(tempr/B256_HIGH);if(!tempr){break;}}*len=i+1;if(little_endian){atom_t*reversed=array_reverse(result,*len);free(result);return reversed;}else{return result;}}uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len){if(!len){return 0;}uint64_t result=0;for(uint16_t i=len;i!=0;i--){result+=digits[i]*((uint64_t)powl(256,i));}return result;}atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len){uint16_t pre_dec=(uint16_t)strcspn(ldbl_digits,".");char*const int_part=strndup(ldbl_digits,pre_dec),*const flot_part=str_reverse(ldbl_digits+pre_dec+1);const uint64_t lhs=strtoull(int_part,NULL,B10_HIGH),rhs=strtoull(flot_part,NULL,B10_HIGH);uint16_t lhs_len,rhs_len;atom_t*const lhs_b256=u64_digits_to_b256(lhs,&lhs_len,true),*const rhs_b256=u64_digits_to_b256(rhs,&rhs_len,false);*len=lhs_len+rhs_len;*int_len=lhs_len;atom_t*final_concat=array_concat(lhs_b256,rhs_b256,lhs_len,rhs_len);free(lhs_b256),free(rhs_b256);return final_concat;}
 #ifndef BNA_H
 #define BNA_H
-
-#define meta_is_base256(metadata) (metadata & TYP_ZENZ)
-#define meta_is_big(metadata) (metadata & TYP_BIG)
-#define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
-static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags);static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags);static atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);atom_t*const header=zalloc(hdrlen,atom_t);header[0]=metadata;header[hdrlen-1]=flags;if(meta_is_big(metadata)){atom_t lens[]={0,0,0,0};u16_to_twoba(int_digits,lens+0,lens+1);u16_to_twoba(flot_digits,lens+2,lens+3);memcpy(header+1,&lens,sz(4,atom_t));}else{header[1]=(atom_t)int_digits;header[2]=(atom_t)flot_digits;}return header;}atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata){const atom_t flags=ldbl_in<0 ? value_flags|FL_SIGN : value_flags;const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;if(!compare_eps(ldbl,0.f,1e-11)){return impl_to_digit_array_ldbl(ldbl,metadata,flags);}else if(0!=u64){return impl_to_digit_array_u64(u64,metadata,flags);}else{return make_array_header(metadata,0,0,flags);}return NULL;}static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);const bool using_base256=metadata&TYP_ZENZ;char*const fullstr=alloc(MAX_SIGFIGS+3,char);snprintf(fullstr,MAX_SIGFIGS+1,"%LG",ldbl);printf("%LG,%s_%zu \n",ldbl,fullstr,strnlen(fullstr,MAX_DOUBLE_KEPT_FIGS));const atom_t
+static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags);static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags);static atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);atom_t*const header=zalloc(hdrlen,atom_t);header[0]=metadata;header[hdrlen-1]=flags;if(meta_is_big(metadata)){atom_t lens[]={0,0,0,0};samb_u16_to_twoba(int_digits,lens+0,lens+1);samb_u16_to_twoba(flot_digits,lens+2,lens+3);memcpy(header+1,&lens,sz(4,atom_t));}else{header[1]=(atom_t)int_digits;header[2]=(atom_t)flot_digits;}return header;}atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata){const atom_t flags=ldbl_in<0 ? value_flags|FL_SIGN : value_flags;const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;if(!compare_eps(ldbl,0.f,1e-11)){return impl_to_digit_array_ldbl(ldbl,metadata,flags);}else if(0!=u64){return impl_to_digit_array_u64(u64,metadata,flags);}else{return make_array_header(metadata,0,0,flags);}return NULL;}static atom_t*impl_to_digit_array_ldbl(const ldbl_t ldbl,const atom_t metadata,const atom_t flags){const atom_t hdrlen=meta_header_offset(metadata);const bool using_base256=metadata&TYP_ZENZ;char*const fullstr=alloc(MAX_SIGFIGS+3,char);snprintf(fullstr,MAX_SIGFIGS+1,"%LG",ldbl);printf("%LG,%s_%zu \n",ldbl,fullstr,strnlen(fullstr,MAX_DOUBLE_KEPT_FIGS));const atom_t
 #ifdef PREFER_CHAR_CONV
 nint_digits=(atom_t)strcspn(fullstr,"."),
 #else 
