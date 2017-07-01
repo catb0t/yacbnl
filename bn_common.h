@@ -146,6 +146,7 @@ atom_t   find_frac_beginning (const char* const str);
 atom_t*         array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
 char*            str_reverse (const char* const str);
+char*      make_empty_string (void);
 
 /* bignum_t */
 bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags, const bignum_t * const * const opt_vals);
@@ -160,6 +161,7 @@ uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* base 256 conversions */
+char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, const uint16_t out_int_len);
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
 atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);

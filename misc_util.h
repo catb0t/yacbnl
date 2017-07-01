@@ -145,4 +145,8 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   return              memcpy( res + a_len, b, b_len);
 }
 
+char* make_empty_string (void) {
+  return zalloc(1, char);
+}
+
 #endif /* end of include guard: MISC_UTIL_H */
