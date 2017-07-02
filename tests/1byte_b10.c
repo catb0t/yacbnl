@@ -4,7 +4,7 @@
 
 /* base 10 single byte addressing */
 
-Test(t, bna_u64) {
+Test(a1b10, bna_u64) {
 
   // zero
   atom_t
@@ -36,7 +36,7 @@ Test(t, bna_u64) {
   free(a);
 }
 
-Test(t, bna_s64) {
+Test(a1b10, bna_s64) {
 
   atom_t
     * a = to_digit_array(0, 0, FL_SIGN, TYP_NONE),
@@ -58,7 +58,7 @@ Test(t, bna_s64) {
   free(a);
 }
 
-Test(t, bna_ldbl) {
+Test(a1b10, bna_ldbl) {
   atom_t* a = to_digit_array((ldbl_t) 1.234, 0, FL_NONE, TYP_NONE),
     z[HEADER_OFFSET + 4] = { TYP_NONE, 1, 3, FL_NONE, 1, 2, 3, 4 };
 
@@ -68,6 +68,10 @@ Test(t, bna_ldbl) {
 
   a = to_digit_array((ldbl_t) 153452.2352344, 0, FL_SIGN, TYP_NONE);
   atom_t y[HEADER_OFFSET + 6 + 7] = { TYP_NONE, 6, 7, FL_SIGN, 1, 5, 3, 4, 5, 2, 2, 3, 5, 2, 3, 4, 4 };
+
+  for (uint16_t i = 0; i < bna_real_len(a); i++) {
+    printf("%d ", a[i]);
+  }
 
   cr_assert_arr_eq(y, a, sz(6 + 7 + HEADER_OFFSET, atom_t));
 

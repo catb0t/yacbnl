@@ -9,7 +9,7 @@ Test(metadata, basic) {
   cr_assert_arr_eq(m, a, sz(HEADER_OFFSET, atom_t));
   free(m);
 
-  m = make_array_header(0, 3, 67, FL_SIGN);
+  m = make_array_header(FL_NONE, 3, 67, FL_SIGN);
   atom_t b[HEADER_OFFSET] = { 0, 3, 67, FL_SIGN };
 
   cr_assert_arr_eq(m, b, sz(HEADER_OFFSET, atom_t));
@@ -31,5 +31,11 @@ Test(metadata, basic) {
   atom_t e[HEADER_OFFSET_BIG] = { TYP_BIG | TYP_ZENZ, 0xFF, 0xFF, 0xFF, 0xFF, FL_SIGN | FL_NAN };
 
   cr_assert_arr_eq(m, e, sz(HEADER_OFFSET_BIG, atom_t));
+  free(m);
+
+  m = make_array_header(TYP_NONE, 6, 7, FL_SIGN);
+  atom_t f[HEADER_OFFSET] = { TYP_NONE, 6, 7, FL_SIGN };
+
+  cr_assert_arr_eq(m, f, sz(HEADER_OFFSET, atom_t));
   free(m);
 }

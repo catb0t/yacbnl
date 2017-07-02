@@ -4,6 +4,7 @@
 #include "bn_common.h"
 #include "misc_util.h"
 #include "addr_interp.h"
+#include "base256.h"
 
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
 static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
@@ -87,7 +88,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     - have a hardware long double that can preserve so many sigfigs
     then why are you running this code anyways
   */
-  snprintf(fullstr, MAX_SIGFIGS + 1 /* sep */, "%LG", ldbl);
+  snprintf(fullstr, MAX_SIGFIGS + 2 /* sep */, "%LG", ldbl);
   printf("%LG, %s_%zu  \n", ldbl, fullstr, strnlen(fullstr, MAX_DOUBLE_KEPT_FIGS));
 
   const atom_t
@@ -101,8 +102,10 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   printf("digits: %d %d\n", nint_digits, nflot_digits);
 
-  atom_t* bn_tlated = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
-       * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+  atom_t * bn_tlated  = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
+         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+
+  printf("!!! DBGPRN %s\n", fullstr);
 
   memcpy(bn_tlated, init, sz(hdrlen, atom_t));
 

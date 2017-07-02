@@ -145,6 +145,7 @@ atom_t   find_frac_beginning (const char* const str);
 atom_t*         array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
 char*            str_reverse (const char* const str);
+char*      make_empty_string (void);
 
 /* bignum_t */
 bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags, const bignum_t * const * const opt_vals);
@@ -159,6 +160,7 @@ uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* base 256 conversions */
+char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
 atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
@@ -310,6 +312,10 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   return              memcpy( res + a_len, b, b_len);
 }
 
+char* make_empty_string (void) {
+  return zalloc(1, char);
+}
+
 #endif /* end of include guard: MISC_UTIL_H */
 #ifndef ADDR_INTERP_H
 #define ADDR_INTERP_H
@@ -345,6 +351,9 @@ uint64_t octba_to_u64 (const atom_t* const bytes) {
 }
 */
 #endif /* end of include guard: ADDR_INTERP_H */
+#ifndef BASE256_H
+#define BASE256_H
+
 
 atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
 
@@ -352,25 +361,24 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
     return zalloc(1, atom_t);
   }
 
-  atom_t* result = zalloc(count_b256_digits_u64(value), atom_t);
-  uint64_t tempr = value;
+  atom_t* const result = zalloc(count_b256_digits_u64(value), atom_t);
 
   uint16_t i = 0;
 
   /* big endian! */
-  for (; tempr; i++) {
+  for (uint64_t tempr = value; tempr; i++) {
     //result = realloc(result, i + 1);
 
-    result[i] = (atom_t)   tempr % B256_HIGH;
+    result[i] = (atom_t)   (tempr % B256_HIGH);
     tempr     = (uint64_t) floorl(tempr / B256_HIGH);
     //printf("%d, %" PRIu64 "\n", result[i], tempr);
     if (! tempr) { break; }
   }
 
-  *len = i + 1;
+  *len = (uint16_t) (i + 1);
 
   if (little_endian) {
-    atom_t* reversed = array_reverse(result, *len);
+    atom_t* const reversed = array_reverse(result, *len);
     free(result);
 
     return reversed;
@@ -379,7 +387,38 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
   }
 }
 
-/* little endian */
+atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len) {
+
+  /* integer aprt before the decimal point */
+  const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
+
+  char* const int_part  = strndup(ldbl_digits, pre_dec),
+      /* flip the significant digits */
+      * const flot_part = str_reverse(ldbl_digits + pre_dec + 1); /* skip separator */
+
+  /* convert the strings to numbers */
+  const uint64_t lhs = strtoull(int_part,  NULL, B10_HIGH),
+                 rhs = strtoull(flot_part, NULL, B10_HIGH);
+
+  free(int_part), free(flot_part);
+
+  uint16_t lhs_len, rhs_len;
+  atom_t* const lhs_b256 = u64_digits_to_b256(lhs, &lhs_len, true),
+        /* note argument #3: flip the fractional digits again */
+        * const rhs_b256 = u64_digits_to_b256(rhs, &rhs_len, false);
+
+  *len     = (uint16_t) (lhs_len + rhs_len);
+  *int_len = lhs_len;
+
+  atom_t* const final_concat = array_concat(lhs_b256, rhs_b256, lhs_len, rhs_len);
+
+  free(lhs_b256), free(rhs_b256);
+
+  return final_concat;
+}
+
+/* vvv little endian vvv */
+
 uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
 
   if (! len) {
@@ -396,33 +435,40 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   return result;
 }
 
-atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len) {
+char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len) {
 
-  uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
+  if (! len) {
+    return make_empty_string();
+  }
 
-  char* const int_part  = strndup(ldbl_digits, pre_dec),
-      /* flip the significant digits */
-      * const flot_part = str_reverse(ldbl_digits + pre_dec + 1); /* skip separator */
+  const uint16_t flot_len = (uint16_t) (len - int_len);
 
-  /* convert the strings to numbers */
-  const uint64_t lhs = strtoull(int_part,  NULL, B10_HIGH),
-                 rhs = strtoull(flot_part, NULL, B10_HIGH);
+  atom_t * const int_part  = memcpy(alloc(int_len, atom_t), digits, sz(int_len, atom_t)),
+         * const flot_part = memcpy(alloc(len - int_len, atom_t), digits + int_len, sz(len - int_len, atom_t));
 
-  uint16_t lhs_len, rhs_len;
-  atom_t* const lhs_b256 = u64_digits_to_b256(lhs, &lhs_len, true),
-        /* flip the fractional digits again */
-        * const rhs_b256 = u64_digits_to_b256(rhs, &rhs_len, false);
+  const uint64_t int_val  = b256_to_u64_digits(int_part, int_len),
+                 flot_val = b256_to_u64_digits(flot_part, flot_len);
+  free(int_part), free(flot_part);
 
-  *len     = lhs_len + rhs_len;
-  *int_len = lhs_len;
+  const uint16_t int_len10  = count_digits_u64(int_val),
+                 flot_len10 = count_digits_u64(flot_val);
 
-  atom_t* final_concat = array_concat(lhs_b256, rhs_b256, lhs_len, rhs_len);
+  char * const flot_str = alloc(flot_len10, atom_t),
+       * const finalval = alloc(int_len10 + flot_len10 + 1, atom_t);
 
-  free(lhs_b256), free(rhs_b256);
+  snprintf(flot_str, (uint16_t) (flot_len10 + 1), "%" PRIu64 "", flot_val);
 
-  return final_concat;
+  char* const flot_str_be = str_reverse(flot_str);
+  free(flot_str);
+
+  snprintf(finalval, (uint16_t) (int_len10 + flot_len10 + /* null + sep */ 2), "%" PRIu64 ".%s", int_val, flot_str_be);
+
+  *out_int_len = count_digits_u64(int_val);
+
+  return finalval;
 }
 
+#endif /* end of include guard: BASE256_H */
 #ifndef BNA_H
 #define BNA_H
 
@@ -523,8 +569,10 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   printf("digits: %d %d\n", nint_digits, nflot_digits);
 
-  atom_t* bn_tlated = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
-       * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+  atom_t * bn_tlated  = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
+         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+
+  printf("!!! DBGPRN %s\n", fullstr);
 
   memcpy(bn_tlated, init, sz(hdrlen, atom_t));
 

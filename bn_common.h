@@ -161,7 +161,7 @@ uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* base 256 conversions */
-char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, const uint16_t out_int_len);
+char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
 atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);

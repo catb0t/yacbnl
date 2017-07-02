@@ -2,14 +2,14 @@
 
 #include "../yacbnl.h"
 
-Test(t, count) {
+Test(common, countint) {
   cr_assert_eq(1,  count_digits_u64(1) );
   cr_assert_eq(2,  count_digits_u64(20) );
   cr_assert_eq(6,  count_digits_u64(200000) );
   cr_assert_eq(20, count_digits_u64(12345678901234567890U) );
 }
 
-Test(t, idx) {
+Test(common, idx) {
   cr_assert_eq(0,  indexable_digits_u64(1) );
   cr_assert_eq(1,  indexable_digits_u64(20) );
   cr_assert_eq(4,  indexable_digits_u64(12345) );
@@ -17,7 +17,14 @@ Test(t, idx) {
   cr_assert_eq(19, indexable_digits_u64(12345678901234567890U) );
 }
 
-Test(t, getn) {
+Test(common, countfrac) {
+  cr_assert_eq(0, count_frac_digits("1234545"));
+  cr_assert_eq(1, count_frac_digits("1234545.4"));
+  cr_assert_eq(2, count_frac_digits("12345123.22"));
+  cr_assert_eq(7, count_frac_digits("153452.2352344"));
+}
+
+Test(common, getn) {
   uint64_t x = 12345;
   for (size_t i = 0; i < 5; i++) {
     atom_t res = get_left_nth_digit(x, (atom_t) i);

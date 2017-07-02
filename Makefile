@@ -43,7 +43,7 @@ mem: $(FILES)
 
 test: $(FILES)
 	./concat_tests.sh
-	$(CC) -lcriterion test_$(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) $(MEM_OPTS) -o ./bin/test_$(OUT_FILENAME)
+	$(CC) -lcriterion test_$(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/test_$(OUT_FILENAME)
 	@echo
 
 clean:
