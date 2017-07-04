@@ -2,7 +2,9 @@
 #include "../yacbnl.h"
 
 int main(void) {
-  atom_t
+
+  printf("%d\n", 001);
+/*  atom_t
     * a = to_digit_array((ldbl_t) 1.234, 0, FL_NONE, 0),
     z[HEADER_OFFSET + 4] = { 0, 1, 3, 0, 1, 2, 3, 4 };
 
@@ -10,7 +12,7 @@ int main(void) {
   printf("z: %d %d %d\n", z[0], z[1], z[2]);
 
   free(a);
-
+*/
 /*  atom_t a[] = { 184, 255 };
   printf("%" PRIu64 "\n", b256_to_u64_digits(a, 3));
   size_t len;

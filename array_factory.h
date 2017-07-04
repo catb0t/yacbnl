@@ -75,21 +75,18 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadata, const atom_t flags) {
 
-  const atom_t hdrlen = meta_header_offset(metadata);
+  /* important metadata flags */
+  const bool is_base256 = meta_is_base256(metadata),
+                 is_big = meta_is_big(metadata);
 
-  const bool using_base256 = metadata & TYP_ZENZ;
-  //const bool using_bigaddr = meta_is_big(metadata);
+  /* length of the entire header section */
+  const atom_t hdrlen    = meta_header_offset(metadata);
+  /* upper bound on significant figures we can store in one array */
+  const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
-  // 504 = (255 * 2) - (HEADER_OFFSET * 2) usually but it probably won't all be used
-  char* const fullstr = alloc(MAX_SIGFIGS + 3 /* separator + null */, char);
-
-  /* IEEE 754 is a weird beast but really, if you
-    - can get so many sigfigs from 80 bits (8087 / intel long double) or
-    - have a hardware long double that can preserve so many sigfigs
-    then why are you running this code anyways
-  */
-  snprintf(fullstr, MAX_SIGFIGS + 2 /* sep */, "%LG", ldbl);
-  printf("%LG, %s_%zu  \n", ldbl, fullstr, strnlen(fullstr, MAX_DOUBLE_KEPT_FIGS));
+  /* put the entire value into a string, which may have trailing zeroes */
+  char * const fullstr  = alloc(sigfigs + 3 /* separator + null */, char);
+  snprintf(fullstr, sigfigs + 2 /* sep */, "%Lf", ldbl);
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
@@ -109,7 +106,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   memcpy(bn_tlated, init, sz(hdrlen, atom_t));
 
-  if (using_base256) {
+  if (is_base256) {
 
   } else {
 

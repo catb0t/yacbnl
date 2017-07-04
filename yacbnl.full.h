@@ -111,7 +111,7 @@ typedef struct st_bignum_t {
 #define    bna_is_base256(bna) (meta_is_base256(bna[0]))
 #define        bna_is_big(bna) (meta_is_big(bna[0]))
 #define bna_header_offset(bna) (meta_header_offset(bna[0]))
-#define      bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[0] + (bna)[1] + HEADER_OFFSET) )
+#define      bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[1] + (bna)[2] + HEADER_OFFSET) )
 #define         bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
 
 #define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
@@ -147,6 +147,10 @@ atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
 char*            str_reverse (const char* const str);
 char*      make_empty_string (void);
 
+atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
+atom_t*  array_trim_leading_zeroes (const atom_t* const bn);
+
+
 /* bignum_t */
 bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags, const bignum_t * const * const opt_vals);
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals);
@@ -160,7 +164,7 @@ uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* base 256 conversions */
-char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
+char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
 atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
@@ -314,6 +318,16 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
 
 char* make_empty_string (void) {
   return zalloc(1, char);
+}
+
+atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
+  (void) bn;
+  return NULL;
+}
+
+atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
+  (void) bn;
+  return NULL;
 }
 
 #endif /* end of include guard: MISC_UTIL_H */
@@ -542,21 +556,18 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadata, const atom_t flags) {
 
-  const atom_t hdrlen = meta_header_offset(metadata);
+  /* important metadata flags */
+  const bool is_base256 = meta_is_base256(metadata),
+                 is_big = meta_is_big(metadata);
 
-  const bool using_base256 = metadata & TYP_ZENZ;
-  //const bool using_bigaddr = meta_is_big(metadata);
+  /* length of the entire header section */
+  const atom_t hdrlen    = meta_header_offset(metadata);
+  /* upper bound on significant figures we can store in one array */
+  const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
-  // 504 = (255 * 2) - (HEADER_OFFSET * 2) usually but it probably won't all be used
-  char* const fullstr = alloc(MAX_SIGFIGS + 3 /* separator + null */, char);
-
-  /* IEEE 754 is a weird beast but really, if you
-    - can get so many sigfigs from 80 bits (8087 / intel long double) or
-    - have a hardware long double that can preserve so many sigfigs
-    then why are you running this code anyways
-  */
-  snprintf(fullstr, MAX_SIGFIGS + 1 /* sep */, "%LG", ldbl);
-  printf("%LG, %s_%zu  \n", ldbl, fullstr, strnlen(fullstr, MAX_DOUBLE_KEPT_FIGS));
+  /* put the entire value into a string, which may have trailing zeroes */
+  char * const fullstr  = alloc(sigfigs + 3 /* separator + null */, char);
+  snprintf(fullstr, sigfigs + 2 /* sep */, "%Lf", ldbl);
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
@@ -576,7 +587,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   memcpy(bn_tlated, init, sz(hdrlen, atom_t));
 
-  if (using_base256) {
+  if (is_base256) {
 
   } else {
 

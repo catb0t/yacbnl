@@ -149,4 +149,14 @@ char* make_empty_string (void) {
   return zalloc(1, char);
 }
 
+atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
+  (void) bn;
+  return NULL;
+}
+
+atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
+  (void) bn;
+  return NULL;
+}
+
 #endif /* end of include guard: MISC_UTIL_H */

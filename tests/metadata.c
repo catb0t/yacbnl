@@ -2,6 +2,16 @@
 
 #include "../yacbnl.h"
 
+Test(metadata, macros) {
+  atom_t a[HEADER_OFFSET + 3] = { TYP_NONE, 1, 2, FL_SIGN, 1, 4, 5};
+
+  cr_assert_eq(bna_real_len(a), HEADER_OFFSET + 3);
+
+  atom_t b[HEADER_OFFSET_BIG + 39] = { TYP_BIG, 0, 5, 0, 34, BN_SINF };
+
+  cr_assert_eq(bna_real_len(b), HEADER_OFFSET_BIG + 39);
+}
+
 Test(metadata, basic) {
   atom_t* m = make_array_header(0, 0, 0, 0),
     a[HEADER_OFFSET_BIG] = { 0, 0, 0, 0 };
