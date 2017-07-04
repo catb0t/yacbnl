@@ -1,0 +1,18 @@
+{
+  "name": "yacbnl",
+  "version": "0.0.1",
+  "repo": "catb0t/yacbnl",
+  "description": "Yet Another C BigNum Library",
+  "keywords": [
+    "math",
+    "bignum"
+  ],
+  "license": "GPL v3",
+  "src": [
+    "yacbnl.min.h",
+    "Makefile",
+    "README.md",
+    "LICENSE"
+  ],
+  "install": "make"
+}
