@@ -1,5 +1,6 @@
+sudo: true
 language: c
-install: true
+install: sudo apt-get install criterion
 script:
   - make
   - bin/test_yacbnl
