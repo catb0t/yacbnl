@@ -1,6 +1,10 @@
 sudo: true
 language: c
-install: sudo apt-get install criterion
+install:
+  - sudo add-apt-repository ppa:snaipewastaken/ppa
+  - sudo apt-get update
+  - sudo apt-get install criterion
+
 script:
   - make
   - bin/test_yacbnl
