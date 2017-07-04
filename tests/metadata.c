@@ -13,14 +13,14 @@ Test(metadata, macros) {
 }
 
 Test(metadata, basic) {
-  atom_t* m = make_array_header(0, 0, 0, 0),
-    a[HEADER_OFFSET_BIG] = { 0, 0, 0, 0 };
+  atom_t* m = make_array_header(TYP_NONE, 0, 0, FL_NONE),
+    a[HEADER_OFFSET_BIG] = { TYP_NONE, 0, 0, FL_NONE };
 
   cr_assert_arr_eq(m, a, sz(HEADER_OFFSET, atom_t));
   free(m);
 
-  m = make_array_header(FL_NONE, 3, 67, FL_SIGN);
-  atom_t b[HEADER_OFFSET] = { 0, 3, 67, FL_SIGN };
+  m = make_array_header(TYP_NONE, 3, 67, FL_SIGN);
+  atom_t b[HEADER_OFFSET] = { TYP_NONE, 3, 67, FL_SIGN };
 
   cr_assert_arr_eq(m, b, sz(HEADER_OFFSET, atom_t));
   free(m);

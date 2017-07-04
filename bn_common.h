@@ -143,11 +143,15 @@ atom_t count_b256_digits_u64 (const uint64_t x);
 atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t     count_frac_digits (const char* const str);
 atom_t   find_frac_beginning (const char* const str);
-atom_t*         array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
-atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
-char*            str_reverse (const char* const str);
-char*      make_empty_string (void);
 
+char*       str_reverse (const char* const str);
+char* make_empty_string (void);
+
+uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...);
+
+atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
+atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
 atom_t*  array_trim_leading_zeroes (const atom_t* const bn);
 

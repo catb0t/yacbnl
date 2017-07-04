@@ -142,11 +142,15 @@ atom_t count_b256_digits_u64 (const uint64_t x);
 atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t     count_frac_digits (const char* const str);
 atom_t   find_frac_beginning (const char* const str);
-atom_t*         array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
-atom_t*        array_reverse (const atom_t* const arr, const uint16_t len);
-char*            str_reverse (const char* const str);
-char*      make_empty_string (void);
 
+char*       str_reverse (const char* const str);
+char* make_empty_string (void);
+
+uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const atom_t* accept_only, const uint16_t accept_len);
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const atom_t* reject_only, const uint16_t reject_len);
+
+atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
+atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
 atom_t*  array_trim_leading_zeroes (const atom_t* const bn);
 
@@ -320,8 +324,24 @@ char* make_empty_string (void) {
   return zalloc(1, char);
 }
 
+uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const atom_t* accept_only, const uint16_t accept_len) {
+  return 0;
+}
+
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const atom_t* reject_only, const uint16_t reject_len) {
+  return 0;
+}
+
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
-  (void) bn;
+  const atom_t hdrlen = bna_header_offset(bn);
+  const bool      big = bna_is_big(bn);
+
+  const uint16_t len = bna_real_len(bn);
+
+  atom_t* rev_cpy = array_reverse(bn, len);
+
+  uint16_t consec_zeroes = str
+
   return NULL;
 }
 

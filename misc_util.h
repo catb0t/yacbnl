@@ -149,8 +149,24 @@ char* make_empty_string (void) {
   return zalloc(1, char);
 }
 
+uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
+  return 0;
+}
+
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
+  return 0;
+}
+
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
-  (void) bn;
+  const atom_t hdrlen = bna_header_offset(bn);
+  const bool      big = bna_is_big(bn);
+
+  const uint16_t len = bna_real_len(bn);
+
+  atom_t* rev_cpy = array_reverse(bn, len);
+
+  uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
+
   return NULL;
 }
 
