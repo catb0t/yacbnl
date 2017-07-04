@@ -1,0 +1,7 @@
+language: c
+install: true
+script:
+  - make
+  - bin/test_yacbnl
+  - make CMD_ARGS=-DPREFER_CHAR_CONV
+  - bin/test_yacbnl
