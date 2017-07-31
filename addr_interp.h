@@ -3,6 +3,7 @@
 
 #include "bn_common.h"
 
+// single address, multi byte
 void samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
   *ah = (atom_t) (n >> (atom_t) 8);// high bits
   *al = (atom_t) (n &  (atom_t) 0xFF);     // low 8 bits

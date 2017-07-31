@@ -48,33 +48,45 @@ typedef long double ldbl_t;typedef uint8_t atom_t;typedef struct st_bignum_t{ato
 #define B256_HIGH 0x100
 #define B10_HIGH 0xA
 
-#define TYP_NONE 0x0
+#define TYP_NONE 0x0 
 #define TYP_BIG 0x01 
 #define TYP_ZENZ 0x02 
 #define TYP_OVERF 0x04 
 #define TYP_EXTN 0x08 
 
-#define FL_NONE 0x0
-#define FL_SIGN 0x01
-#define FL_NAN 0x02
-#define FL_INF 0x04
+#define FL_NONE 0x0 
+#define FL_SIGN 0x01 
+#define FL_NAN 0x02 
+#define FL_INF 0x04 
 
 #define meta_is_base256(metadata) (metadata & TYP_ZENZ)
+
 #define meta_is_big(metadata) (metadata & TYP_BIG)
+
 #define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
 
 #define bna_is_base256(bna) (meta_is_base256(bna[0]))
+
 #define bna_is_big(bna) (meta_is_big(bna[0]))
+
 #define bna_header_offset(bna) (meta_header_offset(bna[0]))
-#define bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[1] + (bna)[2] + HEADER_OFFSET) )
+
+#define bna_real_len(bna) (bna_int_len(bna) + bna_frac_len(bna) + bna_header_offset(bna))
+
 #define bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
 
+#define bna_int_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 1) : (bna)[1] )
+
+#define bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
+
 #define sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+
 #define alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+
 #define zalloc(size, type) calloc(( (size_t) size), sizeof (type))
 #define macrogetval(x) #x
 #define stringify(x) macrogetval(x)
-typedef enum{BN_NONE=0,BN_SIGN=FL_SIGN,BN_SNAN=FL_SIGN|FL_NAN,BN_SINF=FL_SIGN|FL_INF,BN_NAN=FL_NAN,BN_INF=FL_INF}bignum_flag_t;float log256f(const float x);bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps);atom_t count_digits_u64(const uint64_t x);atom_t indexable_digits_u64(const uint64_t x);atom_t count_b256_digits_u64(const uint64_t x);atom_t get_left_nth_digit(const uint64_t x,const atom_t n);atom_t count_frac_digits(const char*const str);atom_t find_frac_beginning(const char*const str);char*str_reverse(const char*const str);char*make_empty_string(void);uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const atom_t*accept_only,const uint16_t accept_len);uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const atom_t*reject_only,const uint16_t reject_len);atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len);atom_t*array_reverse(const atom_t*const arr,const uint16_t len);atom_t*array_trim_trailing_zeroes(const atom_t*const bn);atom_t*array_trim_leading_zeroes(const atom_t*const bn);bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals);bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al);uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al);uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]);char*b256_to_ldbl_digits(const atom_t*const digits,const uint16_t len,const uint16_t int_len,uint16_t*const out_int_len);uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len);atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len);atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian);
+typedef enum{BN_NONE=0,BN_SIGN=FL_SIGN,BN_SNAN=FL_SIGN|FL_NAN,BN_SINF=FL_SIGN|FL_INF,BN_NAN=FL_NAN,BN_INF=FL_INF}bignum_flag_t;float log256f(const float x);bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps);atom_t count_digits_u64(const uint64_t x);atom_t indexable_digits_u64(const uint64_t x);atom_t count_b256_digits_u64(const uint64_t x);atom_t get_left_nth_digit(const uint64_t x,const atom_t n);atom_t count_frac_digits(const char*const str);atom_t find_frac_beginning(const char*const str);char*str_reverse(const char*const str);char*make_empty_string(void);uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const uint16_t accept_num,const atom_t accept_only,...);uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const uint16_t reject_num,const atom_t reject_only,...);atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len);atom_t*array_reverse(const atom_t*const arr,const uint16_t len);atom_t*array_trim_trailing_zeroes(const atom_t*const bn);atom_t*array_trim_leading_zeroes(const atom_t*const bn);bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals);bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al);uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al);uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]);char*b256_to_ldbl_digits(const atom_t*const digits,const uint16_t len,const uint16_t int_len,uint16_t*const out_int_len);uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len);atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len);atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian);
 #endif 
 #ifndef MISC_UTIL_H
 #define MISC_UTIL_H
@@ -84,7 +96,7 @@ char*const str=alloc(22,char);snprintf(str,21,"%" PRIu64 "",x);char d=str[n];fre
 #else 
 const ldbl_t tpow=pow(10,indexable_digits_u64(x)-n),ldivr=((ldbl_t)x)/tpow;return(atom_t)(((uint64_t)ldivr)%10);
 #endif 
-}char*str_reverse(const char*const str){if(NULL==str){return NULL;}size_t len=strnlen(str,MAX_SIGFIGS);char*newp;if(len<2){newp=strndup(str,len);}else{newp=alloc(len+1,char);size_t i,j;for(i=0,j=len-1;i<len;i++,j--){newp[i]=str[j];}newp[i]='\0';}return newp;}float log256f(const float x){return logf(x)/logf(256);}atom_t count_b256_digits_u64(const uint64_t x){return(atom_t)floorf(log256f((float)x)+1.f);}atom_t*array_reverse(const atom_t*const arr,const uint16_t len){atom_t*result=zalloc(len,atom_t);if(len){for(uint16_t i=0;i<len;i++){result[i]=arr[ i-len ];}}return result;}atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len){if(!(a_len+b_len)){return alloc(0,atom_t);}else if(a_len==a_len+b_len){return memcpy(alloc(a_len,atom_t),a,a_len);}else if(b_len==a_len+b_len){return memcpy(alloc(b_len,atom_t),b,b_len);}atom_t*const res=memcpy(alloc(a_len+b_len,atom_t),a,a_len);return memcpy(res+a_len,b,b_len);}char*make_empty_string(void){return zalloc(1,char);}uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const atom_t*accept_only,const uint16_t accept_len){return 0;}uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const atom_t*reject_only,const uint16_t reject_len){return 0;}atom_t*array_trim_trailing_zeroes(const atom_t*const bn){const atom_t hdrlen=bna_header_offset(bn);const bool big=bna_is_big(bn);const uint16_t len=bna_real_len(bn);atom_t*rev_cpy=array_reverse(bn,len);uint16_t consec_zeroes=strreturn NULL;}atom_t*array_trim_leading_zeroes(const atom_t*const bn){(void)bn;return NULL;}
+}char*str_reverse(const char*const str){if(NULL==str){return NULL;}size_t len=strnlen(str,MAX_SIGFIGS);char*newp;if(len<2){newp=strndup(str,len);}else{newp=alloc(len+1,char);size_t i,j;for(i=0,j=len-1;i<len;i++,j--){newp[i]=str[j];}newp[i]='\0';}return newp;}float log256f(const float x){return logf(x)/logf(256);}atom_t count_b256_digits_u64(const uint64_t x){return(atom_t)floorf(log256f((float)x)+1.f);}atom_t*array_reverse(const atom_t*const arr,const uint16_t len){atom_t*result=zalloc(len,atom_t);if(len){for(uint16_t i=0;i<len;i++){result[i]=arr[ i-len ];}}return result;}atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len){if(!(a_len+b_len)){return alloc(0,atom_t);}else if(a_len==a_len+b_len){return memcpy(alloc(a_len,atom_t),a,a_len);}else if(b_len==a_len+b_len){return memcpy(alloc(b_len,atom_t),b,b_len);}atom_t*const res=memcpy(alloc(a_len+b_len,atom_t),a,a_len);return memcpy(res+a_len,b,b_len);}char*make_empty_string(void){return zalloc(1,char);}uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const uint16_t accept_num,const atom_t accept_only,...){return 0;}uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const uint16_t reject_num,const atom_t reject_only,...){return 0;}atom_t*array_trim_trailing_zeroes(const atom_t*const bn){const atom_t hdrlen=bna_header_offset(bn);const bool is_big=bna_is_big(bn);const uint16_tlen=bna_real_len(bn),int_len=bna_int_len(bn),frc_len=bna_frac_len(bn);atom_t const*rev_cpy=array_reverse(bn,len);uint16_t consec_zeroes=array_spn(rev_cpy,len,1,0);return NULL;}atom_t*array_trim_leading_zeroes(const atom_t*const bn){(void)bn;return NULL;}
 #endif 
 #ifndef ADDR_INTERP_H
 #define ADDR_INTERP_H

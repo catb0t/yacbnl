@@ -157,13 +157,24 @@ uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t r
   return 0;
 }
 
+/*
+  atom_t* -> atom_t*
+
+  remove insignificant trailing zeroes from an array of digits in any base, since
+  the representation of literal 0 is constant across radicies.
+*/
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const atom_t hdrlen = bna_header_offset(bn);
-  const bool      big = bna_is_big(bn);
+  const bool   is_big = bna_is_big(bn);
 
-  const uint16_t len = bna_real_len(bn);
+  const uint16_t
+    len = bna_real_len(bn),
+    int_len = bna_int_len(bn),
+    frc_len = bna_frac_len(bn);
 
-  atom_t* rev_cpy = array_reverse(bn, len);
+
+
+  atom_t const * rev_cpy = array_reverse(bn, len);
 
   uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
 

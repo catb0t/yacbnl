@@ -27,21 +27,29 @@
 #define BN_COMMON_H
 
 
+// size of the headers for each kind of array
 #define HEADER_OFFSET     ((atom_t) 4)
 #define HEADER_OFFSET_BIG ((atom_t) 6)
 
+// maximum significant figures for conversions to hardware types
 #ifndef MAX_SIGFIGS
   #define MAX_SIGFIGS   ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
 #endif
 
+// and the same for big arrays
 #ifndef MAX_SIGFIGS_BIG
   #define MAX_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
 #endif
 
+// number of kept significant figures for long doubles. probably obsolete
 #ifndef MAX_DOUBLE_KEPT_FIGS
   #define MAX_DOUBLE_KEPT_FIGS 200
 #endif
 
+/*
+  whether the compile process is going to prefer string-based operations or math-based operations
+  for e.g determining whether to use strings or logarithms for getting the number of digits in an integer
+*/
 #ifdef PREFER_CHAR_CONV
   #pragma message("preferring slower O(n) char operations over O(1) floating point math")
 #endif
@@ -54,6 +62,11 @@ typedef uint8_t     atom_t;
 typedef struct st_bignum_t {
 
   /*
+
+  TYPE, INT LEN, FRAC LEN, FLAGS, DATA...
+  TYPE, INT LEN 1, INT LEN 2, FRAC LEN 1, FRAC LEN 2, FLAGS, DATA... (big)
+
+
     array + 0 = the type of this array
 
     ARRAY TYPES:
@@ -87,35 +100,65 @@ typedef struct st_bignum_t {
 
 } bignum_t;
 
+// highest value for these bases. self-explanatory but erase magic numbers
 #define B256_HIGH 0x100
 #define B10_HIGH  0xA
 
 /* composable flags */
 /* array types */
-#define TYP_NONE  0x0
+#define TYP_NONE  0x0  /* absolutely normal in every way. no need to apply this, obviously, but you can test against it */
 #define TYP_BIG   0x01 /* this array is big (2 byte addressing mode) */
 #define TYP_ZENZ  0x02 /* array uses base 256 rather than base 10 (from the word zenzizenzizenzic) */
 #define TYP_OVERF 0x04 /* this array's intended value would overflow this array; combine its data with another */
-#define TYP_EXTN  0x08 /* this array is the extension of another array whose value is overflowed */
+#define TYP_EXTN  0x08 /* this array is the extension of another array whose value is overflowed (see TYP_OVERF) */
 
-/* these apply to number values themselves */
-#define FL_NONE 0x0
-#define FL_SIGN 0x01
-#define FL_NAN  0x02
-#define FL_INF  0x04
+/*
+  these apply to number values themselves, and can be composed, such that
+  negative NaN and negative INF are possible as they should be
+*/
+#define FL_NONE 0x0  /* none of the following */
+#define FL_SIGN 0x01 /* this number is negative */
+#define FL_NAN  0x02 /* this number is not a number */
+#define FL_INF  0x04 /* this number is infinity */
 
+/*
+  handy macros which may expand indefinitely
+  for getting data about arrays more easily
+*/
+/*
+  the following are about the METADATA byte -- apply them to the VALUE of the 0th
+  index to learn something about that TYP slot
+*/
+// whether this metadata indicates base 256
 #define    meta_is_base256(metadata) (metadata & TYP_ZENZ)
+// whether this metadata indicates the big, two byte addressing mode for the array
 #define        meta_is_big(metadata) (metadata & TYP_BIG)
+// the size of the header offset for the encompassing array
 #define meta_header_offset(metadata) (meta_is_big(metadata) ? HEADER_OFFSET_BIG : HEADER_OFFSET)
 
+/*
+  the following are about big num arrays themselves, not any particular byte
+*/
+// whether this array is base 256
 #define    bna_is_base256(bna) (meta_is_base256(bna[0]))
+// whether it is big
 #define        bna_is_big(bna) (meta_is_big(bna[0]))
+// the size of the header offset
 #define bna_header_offset(bna) (meta_header_offset(bna[0]))
-#define      bna_real_len(bna) (bna_is_big(bna) ? (samb_twoarray_to_u16((bna) + 1) + samb_twoarray_to_u16((bna) + 3) + HEADER_OFFSET_BIG) : ((bna)[1] + (bna)[2] + HEADER_OFFSET) )
+// the "real length" of the constituent parts of this array
+#define      bna_real_len(bna) (bna_int_len(bna) + bna_frac_len(bna) + bna_header_offset(bna))
+// the flags set for this array
 #define         bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
+// the length of the integer part
+#define       bna_int_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 1) : (bna)[1] )
+// the length of the fractional part
+#define      bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
 
+// multiplies a size by the size of the typename to get the size of a space
 #define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+// allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
 #define  alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+// same, but cleans (zeroes) the bytes with calloc
 #define zalloc(size, type) calloc(( (size_t) size),  sizeof (type))
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
@@ -146,8 +189,8 @@ atom_t   find_frac_beginning (const char* const str);
 char*       str_reverse (const char* const str);
 char* make_empty_string (void);
 
-uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const atom_t* accept_only, const uint16_t accept_len);
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const atom_t* reject_only, const uint16_t reject_len);
+uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...);
 
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
@@ -324,23 +367,34 @@ char* make_empty_string (void) {
   return zalloc(1, char);
 }
 
-uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const atom_t* accept_only, const uint16_t accept_len) {
+uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
   return 0;
 }
 
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const atom_t* reject_only, const uint16_t reject_len) {
+uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
   return 0;
 }
 
+/*
+  atom_t* -> atom_t*
+
+  remove insignificant trailing zeroes from an array of digits in any base, since
+  the representation of literal 0 is constant across radicies.
+*/
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const atom_t hdrlen = bna_header_offset(bn);
-  const bool      big = bna_is_big(bn);
+  const bool   is_big = bna_is_big(bn);
 
-  const uint16_t len = bna_real_len(bn);
+  const uint16_t
+    len = bna_real_len(bn),
+    int_len = bna_int_len(bn),
+    frc_len = bna_frac_len(bn);
 
-  atom_t* rev_cpy = array_reverse(bn, len);
 
-  uint16_t consec_zeroes = str
+
+  atom_t const * rev_cpy = array_reverse(bn, len);
+
+  uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
 
   return NULL;
 }
@@ -355,6 +409,7 @@ atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
 #define ADDR_INTERP_H
 
 
+// single address, multi byte
 void samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
   *ah = (atom_t) (n >> (atom_t) 8);// high bits
   *al = (atom_t) (n &  (atom_t) 0xFF);     // low 8 bits
