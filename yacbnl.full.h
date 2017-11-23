@@ -155,11 +155,11 @@ typedef struct st_bignum_t {
 #define      bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
 
 // multiplies a size by the size of the typename to get the size of a space
-#define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+#define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
-#define  alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+#define  alloc(type, size) malloc(( (size_t) size) * sizeof (type))
 // same, but cleans (zeroes) the bytes with calloc
-#define zalloc(size, type) calloc(( (size_t) size),  sizeof (type))
+#define zalloc(type, size) calloc(( (size_t) size),  sizeof (type))
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
@@ -287,7 +287,7 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
   char* const str = alloc(22, char);
   snprintf(str, 21, "%" PRIu64 "", x);
 
-  char d = str[n];
+  const char d = str[n];
   free(str);
   return (atom_t) ((unsigned) d - '0');
 
@@ -312,7 +312,7 @@ char* str_reverse (const char* const str) {
     newp = strndup(str, len);
 
   } else {
-    newp = alloc(len + 1, char);
+    newp = alloc(char, len + 1);
 
     size_t i, j;
     for (i = 0, j = len - 1; i < len; i++, j--) {
@@ -336,7 +336,7 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
 
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
-  atom_t* result = zalloc(len, atom_t);
+  atom_t* result = zalloc(atom_t, len);
 
   if (len) {
     for (uint16_t i = 0; i < len; i++) {
@@ -349,29 +349,31 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
 atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
   if (! (a_len + b_len) ) {
-    return alloc(0, atom_t);
+    return alloc(atom_t, 0);
   }
 
   else if (a_len == a_len + b_len) {
-    return memcpy(alloc(a_len, atom_t), a, a_len);
+    return memcpy(alloc(atom_t, a_len), a, a_len);
 
   } else if (b_len == a_len + b_len) {
-    return memcpy(alloc(b_len, atom_t), b, b_len);
+    return memcpy(alloc(atom_t, b_len), b, b_len);
   }
 
-  atom_t* const res = memcpy( alloc(a_len + b_len, atom_t) , a, a_len);
+  atom_t* const res = memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
   return              memcpy( res + a_len, b, b_len);
 }
 
 char* make_empty_string (void) {
-  return zalloc(1, char);
+  return zalloc(char, 1);
 }
 
 uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
+  (void) arr; (void) arr_len; (void) accept_num; (void) accept_only;
   return 0;
 }
 
 uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
+  (void) arr; (void) arr_len; (void) reject_num; (void) reject_only;
   return 0;
 }
 
@@ -395,6 +397,12 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   atom_t const * rev_cpy = array_reverse(bn, len);
 
   uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
+
+  (void) hdrlen;
+  (void) is_big;
+  (void) int_len;
+  (void) frc_len;
+  (void) consec_zeroes;
 
   return NULL;
 }

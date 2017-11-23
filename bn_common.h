@@ -156,11 +156,11 @@ typedef struct st_bignum_t {
 #define      bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
 
 // multiplies a size by the size of the typename to get the size of a space
-#define        sz(n, type) ( ((size_t) n) * (sizeof (type)) )
+#define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
-#define  alloc(size, type) malloc(( (size_t) size) * sizeof (type))
+#define  alloc(type, size) malloc(( (size_t) size) * sizeof (type))
 // same, but cleans (zeroes) the bytes with calloc
-#define zalloc(size, type) calloc(( (size_t) size),  sizeof (type))
+#define zalloc(type, size) calloc(( (size_t) size),  sizeof (type))
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
