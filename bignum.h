@@ -56,7 +56,7 @@ bignum_t* bignum_ctor (
 /*
   bignum_t* -> bignum_t*
 
-  deep copy a bignum_t's properties but not its identity.
+  deep copy a bignum_t's properties but not its identity
 */
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
 
