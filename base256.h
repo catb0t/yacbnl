@@ -6,10 +6,10 @@
 atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
 
   if (! value || NULL == len) {
-    return zalloc(1, atom_t);
+    return zalloc(atom_t, 1);
   }
 
-  atom_t* const result = zalloc(count_b256_digits_u64(value), atom_t);
+  atom_t* const result = zalloc(atom_t, count_b256_digits_u64(value));
 
   uint16_t i = 0;
 
@@ -91,8 +91,8 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
 
   const uint16_t flot_len = (uint16_t) (len - int_len);
 
-  atom_t * const int_part  = memcpy(alloc(int_len, atom_t), digits, sz(int_len, atom_t)),
-         * const flot_part = memcpy(alloc(len - int_len, atom_t), digits + int_len, sz(len - int_len, atom_t));
+  atom_t * const int_part  = memcpy(alloc(atom_t, int_len), digits, sz(atom_t, int_len)),
+         * const flot_part = memcpy(alloc(atom_t, len - int_len), digits + int_len, sz(atom_t, len - int_len));
 
   const uint64_t int_val  = b256_to_u64_digits(int_part, int_len),
                  flot_val = b256_to_u64_digits(flot_part, flot_len);
@@ -101,8 +101,8 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   const uint16_t int_len10  = count_digits_u64(int_val),
                  flot_len10 = count_digits_u64(flot_val);
 
-  char * const flot_str = alloc(flot_len10, atom_t),
-       * const finalval = alloc(int_len10 + flot_len10 + 1, atom_t);
+  char * const flot_str = alloc(atom_t, flot_len10),
+       * const finalval = alloc(atom_t, int_len10 + flot_len10 + 1);
 
   snprintf(flot_str, (uint16_t) (flot_len10 + 1), "%" PRIu64 "", flot_val);
 

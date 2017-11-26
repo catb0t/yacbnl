@@ -29,26 +29,26 @@ bignum_t* bignum_ctor (
     .value = to_digit_array(ldbl, u64, flags, 0),
     .imgry = cx
       ? memcpy(
-          alloc( bna_real_len(opt_vals[0]->value), atom_t),
+          alloc(atom_t, bna_real_len(opt_vals[0]->value)),
           opt_vals[0]->value,
-          sz( bna_real_len(opt_vals[0]->value), atom_t)
+          sz(atom_t, bna_real_len(opt_vals[0]->value))
         )
-      : zalloc(HEADER_OFFSET, atom_t),
+      : zalloc(atom_t, HEADER_OFFSET),
 
     .fracl = fr
       ? memcpy(
-        alloc( bna_real_len(opt_vals[1]->value), atom_t),
+        alloc(atom_t, bna_real_len(opt_vals[1]->value)),
         opt_vals[1]->value,
-        sz( bna_real_len(opt_vals[1]->value), atom_t)
+        sz(atom_t, bna_real_len(opt_vals[1]->value))
       )
-      : zalloc(HEADER_OFFSET, atom_t),
+      : zalloc(atom_t, HEADER_OFFSET),
 
     .expt = ex
       ? bignum_copy(opt_vals[2], true)
       : bignum_ctor(0, 0, 0, NULL)
   };
 
-  bignum_t* hp_bn = memcpy(alloc(1, bignum_t), &st_bn, sizeof(bignum_t) );
+  bignum_t* hp_bn = memcpy(alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
 
   return hp_bn;
 }
@@ -61,7 +61,7 @@ bignum_t* bignum_ctor (
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
 
   if (NULL == bn) {
-    return zalloc(1, bignum_t);
+    return zalloc(bignum_t, 1);
   }
 
   (void) no_recurse_optionals;

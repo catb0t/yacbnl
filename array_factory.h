@@ -13,7 +13,7 @@ static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metada
 static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
 
   const atom_t  hdrlen = meta_header_offset(metadata);
-  atom_t* const header = zalloc(hdrlen, atom_t);
+  atom_t* const header = zalloc(atom_t, hdrlen);
 
   /* first byte is the type and base */
   header[0]          = metadata;
@@ -28,7 +28,7 @@ static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digi
     samb_u16_to_twoba(flot_digits, lens + 2, lens + 3);
 
     /* paste four bytes between the metadata and flags */
-    memcpy(header + 1, &lens, sz(4, atom_t) );
+    memcpy(header + 1, &lens, sz(atom_t, 4) );
 
   } else {
     header[1] = (atom_t) int_digits;
@@ -85,7 +85,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
   /* put the entire value into a string, which may have trailing zeroes */
-  char * const fullstr  = alloc(sigfigs + 3 /* separator + null */, char);
+  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */);
   snprintf(fullstr, sigfigs + 2 /* sep */, "%Lf", ldbl);
 
   const atom_t
@@ -99,12 +99,12 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   printf("digits: %d %d\n", nint_digits, nflot_digits);
 
-  atom_t * bn_tlated  = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
+  atom_t * bn_tlated  = alloc(atom_t, nint_digits + nflot_digits + hdrlen),
          * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
 
   printf("!!! DBGPRN %s\n", fullstr);
 
-  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+  memcpy(bn_tlated, init, sz(atom_t, hdrlen));
 
   if (is_base256) {
 
@@ -145,14 +145,14 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
                 hdrlen = meta_header_offset(metadata);
 
 
-  atom_t* bn_tlated = alloc(ndigits + hdrlen, atom_t),
+  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen),
        * const init = make_array_header(metadata, ndigits, 0, flags);
 
-  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+  memcpy(bn_tlated, init, sz(atom_t, hdrlen));
   free(init);
 
   if (using_base256) {
-    char* const str = alloc( ndigits + /* null term */ 2, char);
+    char* const str = alloc( char, ndigits + /* null term */ 2);
     snprintf(str, 21, "%" PRIu64 "", u64);
 
     free(str);

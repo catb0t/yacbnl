@@ -388,11 +388,9 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const bool   is_big = bna_is_big(bn);
 
   const uint16_t
-    len = bna_real_len(bn),
+    len     = (uint16_t) bna_real_len(bn),
     int_len = bna_int_len(bn),
     frc_len = bna_frac_len(bn);
-
-
 
   atom_t const * rev_cpy = array_reverse(bn, len);
 
@@ -455,10 +453,10 @@ uint64_t octba_to_u64 (const atom_t* const bytes) {
 atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
 
   if (! value || NULL == len) {
-    return zalloc(1, atom_t);
+    return zalloc(atom_t, 1);
   }
 
-  atom_t* const result = zalloc(count_b256_digits_u64(value), atom_t);
+  atom_t* const result = zalloc(atom_t, count_b256_digits_u64(value));
 
   uint16_t i = 0;
 
@@ -540,8 +538,8 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
 
   const uint16_t flot_len = (uint16_t) (len - int_len);
 
-  atom_t * const int_part  = memcpy(alloc(int_len, atom_t), digits, sz(int_len, atom_t)),
-         * const flot_part = memcpy(alloc(len - int_len, atom_t), digits + int_len, sz(len - int_len, atom_t));
+  atom_t * const int_part  = memcpy(alloc(atom_t, int_len), digits, sz(atom_t, int_len)),
+         * const flot_part = memcpy(alloc(atom_t, len - int_len), digits + int_len, sz(atom_t, len - int_len));
 
   const uint64_t int_val  = b256_to_u64_digits(int_part, int_len),
                  flot_val = b256_to_u64_digits(flot_part, flot_len);
@@ -550,8 +548,8 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   const uint16_t int_len10  = count_digits_u64(int_val),
                  flot_len10 = count_digits_u64(flot_val);
 
-  char * const flot_str = alloc(flot_len10, atom_t),
-       * const finalval = alloc(int_len10 + flot_len10 + 1, atom_t);
+  char * const flot_str = alloc(atom_t, flot_len10),
+       * const finalval = alloc(atom_t, int_len10 + flot_len10 + 1);
 
   snprintf(flot_str, (uint16_t) (flot_len10 + 1), "%" PRIu64 "", flot_val);
 
@@ -577,7 +575,7 @@ static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metada
 static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
 
   const atom_t  hdrlen = meta_header_offset(metadata);
-  atom_t* const header = zalloc(hdrlen, atom_t);
+  atom_t* const header = zalloc(atom_t, hdrlen);
 
   /* first byte is the type and base */
   header[0]          = metadata;
@@ -592,7 +590,7 @@ static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digi
     samb_u16_to_twoba(flot_digits, lens + 2, lens + 3);
 
     /* paste four bytes between the metadata and flags */
-    memcpy(header + 1, &lens, sz(4, atom_t) );
+    memcpy(header + 1, &lens, sz(atom_t, 4) );
 
   } else {
     header[1] = (atom_t) int_digits;
@@ -649,7 +647,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
   /* put the entire value into a string, which may have trailing zeroes */
-  char * const fullstr  = alloc(sigfigs + 3 /* separator + null */, char);
+  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */);
   snprintf(fullstr, sigfigs + 2 /* sep */, "%Lf", ldbl);
 
   const atom_t
@@ -663,12 +661,12 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   printf("digits: %d %d\n", nint_digits, nflot_digits);
 
-  atom_t * bn_tlated  = alloc(nint_digits + nflot_digits + hdrlen, atom_t),
+  atom_t * bn_tlated  = alloc(atom_t, nint_digits + nflot_digits + hdrlen),
          * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
 
   printf("!!! DBGPRN %s\n", fullstr);
 
-  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+  memcpy(bn_tlated, init, sz(atom_t, hdrlen));
 
   if (is_base256) {
 
@@ -709,14 +707,14 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
                 hdrlen = meta_header_offset(metadata);
 
 
-  atom_t* bn_tlated = alloc(ndigits + hdrlen, atom_t),
+  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen),
        * const init = make_array_header(metadata, ndigits, 0, flags);
 
-  memcpy(bn_tlated, init, sz(hdrlen, atom_t));
+  memcpy(bn_tlated, init, sz(atom_t, hdrlen));
   free(init);
 
   if (using_base256) {
-    char* const str = alloc( ndigits + /* null term */ 2, char);
+    char* const str = alloc( char, ndigits + /* null term */ 2);
     snprintf(str, 21, "%" PRIu64 "", u64);
 
     free(str);
@@ -793,26 +791,26 @@ bignum_t* bignum_ctor (
     .value = to_digit_array(ldbl, u64, flags, 0),
     .imgry = cx
       ? memcpy(
-          alloc( bna_real_len(opt_vals[0]->value), atom_t),
+          alloc(atom_t, bna_real_len(opt_vals[0]->value)),
           opt_vals[0]->value,
-          sz( bna_real_len(opt_vals[0]->value), atom_t)
+          sz(atom_t, bna_real_len(opt_vals[0]->value))
         )
-      : zalloc(HEADER_OFFSET, atom_t),
+      : zalloc(atom_t, HEADER_OFFSET),
 
     .fracl = fr
       ? memcpy(
-        alloc( bna_real_len(opt_vals[1]->value), atom_t),
+        alloc(atom_t, bna_real_len(opt_vals[1]->value)),
         opt_vals[1]->value,
-        sz( bna_real_len(opt_vals[1]->value), atom_t)
+        sz(atom_t, bna_real_len(opt_vals[1]->value))
       )
-      : zalloc(HEADER_OFFSET, atom_t),
+      : zalloc(atom_t, HEADER_OFFSET),
 
     .expt = ex
       ? bignum_copy(opt_vals[2], true)
       : bignum_ctor(0, 0, 0, NULL)
   };
 
-  bignum_t* hp_bn = memcpy(alloc(1, bignum_t), &st_bn, sizeof(bignum_t) );
+  bignum_t* hp_bn = memcpy(alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
 
   return hp_bn;
 }
@@ -825,7 +823,7 @@ bignum_t* bignum_ctor (
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
 
   if (NULL == bn) {
-    return zalloc(1, bignum_t);
+    return zalloc(bignum_t, 1);
   }
 
   (void) no_recurse_optionals;

@@ -170,11 +170,9 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const bool   is_big = bna_is_big(bn);
 
   const uint16_t
-    len = bna_real_len(bn),
+    len     = (uint16_t) bna_real_len(bn),
     int_len = bna_int_len(bn),
     frc_len = bna_frac_len(bn);
-
-
 
   atom_t const * rev_cpy = array_reverse(bn, len);
 
