@@ -6,7 +6,7 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := -lm -g #-fprofile-arcs -ftest-coverage
+OPTS := -lm -g -std=gnu11 #-fprofile-arcs -ftest-coverage
 
 ifeq ($(CC), g++)
 	#MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan

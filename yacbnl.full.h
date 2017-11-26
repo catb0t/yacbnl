@@ -229,7 +229,7 @@ bool compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps) {
 /*
   uint64_t -> atom_t
 
-  count the number of actual digits in a base 10 number.
+  count the number of actual digits in a base 10 number
   the result is always less than 21 because that's all you get with 64 bits
 */
 atom_t count_digits_u64 (const uint64_t x) {
@@ -240,12 +240,12 @@ atom_t count_digits_u64 (const uint64_t x) {
   char* -> atom_t
 
   find the beginning of the fractional part of the string representation of a
-  floating point numuber
+    floating point numuber
 */
 atom_t find_frac_beginning (const char* const str) {
   const atom_t pre_len = (atom_t) strcspn(str, ".");
             //begin_read = (atom_t) (1U + (unsigned) pre_len);
-            /* + 1 for separator */
+            /* found + 1 for separator */
   return (atom_t) (1U + (unsigned) pre_len);
 }
 
@@ -253,7 +253,7 @@ atom_t find_frac_beginning (const char* const str) {
   char* -> atom_t
 
   count the number of actual digits in a string representation of a floating
-  point number
+    point number
 */
 atom_t count_frac_digits (const char* const str) {
   return (atom_t) strspn(str + find_frac_beginning(str), "0123456789");
@@ -262,8 +262,9 @@ atom_t count_frac_digits (const char* const str) {
 /*
   uint64_t -> atom_t
 
-  report the highest indexable digit of a number; for use with get_left_nth_digit.
-  0 based counting; constrast with count_digits_u64.
+  report the highest indexable digit of a number
+  0 based counting; constrast with count_digits_u64
+  for use with get_left_nth_digit
 */
 atom_t indexable_digits_u64 (const uint64_t x) {
   return (atom_t) floor( log10f( (float) x) );
@@ -273,13 +274,13 @@ atom_t indexable_digits_u64 (const uint64_t x) {
   uint64_t, atom_t -> atom_t
 
   report the value in a given 10s place of a number
-  indexing is 0-based and from the left side (greatest significand).
+  indexing is 0-based and from the left side (greatest significand)
 
-  uses a fast ( theoretically O(1) ) number-theory formula by default.
+  uses a fast ( theoretically O(1) ) number-theory formula by default
 
-  define PREFER_CHAR_CONV and you get a much slower, string-based implementation,
-  that relies much less on floating point math.
-  it's what you asked for.
+  define PREFER_CHAR_CONV and you get a much slower string-based implementation
+    that relies much less on floating point math
+    -- it's what you asked for
 */
 atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 #ifdef PREFER_CHAR_CONV
@@ -302,11 +303,19 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 #endif /* PREFER_CHAR_CONV */
 }
 
+/*
+  char* -> char*
+
+  reverse a string.
+  the return value will never point to the input value, hence const* const
+
+  the return value may be NULL but will not be an otherwise invalid pointer
+*/
 char* str_reverse (const char* const str) {
   if ( NULL == str ) { return NULL; }
 
   size_t len = strnlen(str, MAX_SIGFIGS);
-  char* newp;
+  char* newp = NULL;
 
   if ( len < 2 ) {
     newp = strndup(str, len);
@@ -326,14 +335,31 @@ char* str_reverse (const char* const str) {
   return newp;
 }
 
+
+/*
+  float -> float
+
+  simple base 256 logarithm
+*/
 float log256f (const float x) {
   return logf(x) / logf(256);
 }
 
+/*
+  uint64_t -> atom_t
+
+  count the number of digits needed in base 256 to represent x
+*/
 atom_t count_b256_digits_u64 (const uint64_t x) {
   return (atom_t) floorf( log256f( (float) x ) + 1.f);
 }
 
+/*
+  atom_t*, uint16_t -> atom_t*
+
+  copy and reverse an array
+  the return value will always be a valid unique pointer
+*/
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
   atom_t* result = zalloc(atom_t, len);
@@ -347,6 +373,11 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
   return result;
 }
 
+/*
+  atom_t*, atom_t*, uint16_t, uint16_t -> atom_t*
+
+  glue two arrays together
+*/
 atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
   if (! (a_len + b_len) ) {
     return alloc(atom_t, 0);
@@ -363,15 +394,36 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   return              memcpy( res + a_len, b, b_len);
 }
 
+/*
+  -> char*
+
+  return an empty (0-length) string
+*/
 char* make_empty_string (void) {
   return zalloc(char, 1);
 }
 
+/*
+  atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
+
+  strspn but for arrays
+  return the length of the initial section of arr which consists only of values
+    in accept_only
+  see strspn(3)
+*/
 uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
   (void) arr; (void) arr_len; (void) accept_num; (void) accept_only;
   return 0;
 }
 
+/*
+  atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
+
+  strcspn but for arrays
+  return the length of the initial section of arr which consists only of values
+    NOT in accept_only
+  see strcspn(3)
+*/
 uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
   (void) arr; (void) arr_len; (void) reject_num; (void) reject_only;
   return 0;
@@ -380,8 +432,8 @@ uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t r
 /*
   atom_t* -> atom_t*
 
-  remove insignificant trailing zeroes from an array of digits in any base, since
-  the representation of literal 0 is constant across radicies.
+  remove insignificant trailing zeroes from an array of digits in any base
+    since the representation of literal 0 is constant across radicies
 */
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const atom_t hdrlen = bna_header_offset(bn);
@@ -405,6 +457,11 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   return NULL;
 }
 
+/*
+  atom_t* -> atom_t*
+
+  remove insignificant traling zeroes from an array of digits in any base
+*/
 atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
   (void) bn;
   return NULL;
@@ -414,13 +471,28 @@ atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
 #ifndef ADDR_INTERP_H
 #define ADDR_INTERP_H
 
-
 // single address, multi byte
+
+/*
+  uint16_t, atom_t*, atom_t* ->
+
+  the value at ah is changed to the high 8 bits of n
+  the value at al is changed to the low  8 bits of n
+
+  the pointers, ah and al, are never changed
+*/
 void samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al) {
-  *ah = (atom_t) (n >> (atom_t) 8);// high bits
+  *ah = (atom_t) (n >> (atom_t) 8);        // high bits
   *al = (atom_t) (n &  (atom_t) 0xFF);     // low 8 bits
 }
 
+/*
+  atom_t, atom_t -> uint16_t
+
+  the return value is composed of 8 high and 8 low bits from ah and al
+
+  inverse of samb_u16_to_twoba
+*/
 uint16_t samb_twoba_to_u16 (const atom_t ah, const atom_t al) {
   // put the high 8 bits at the top and the rest at the bottom
   return (uint16_t) ( (ah << 8) | (atom_t) al);
@@ -818,7 +890,7 @@ bignum_t* bignum_ctor (
 /*
   bignum_t* -> bignum_t*
 
-  deep copy a bignum_t's properties but not its identity.
+  deep copy a bignum_t's properties but not its identity
 */
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
 
