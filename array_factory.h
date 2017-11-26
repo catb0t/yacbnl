@@ -86,7 +86,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 
   /* put the entire value into a string, which may have trailing zeroes */
   char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */);
-  snprintf(fullstr, sigfigs + 2 /* sep */, "%Lf", ldbl);
+  snprintf(fullstr, sigfigs + 2 /* sep */, "%LG", ldbl);
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
@@ -97,12 +97,12 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
 #endif /* PREFER_CHAR_CONV */
     nflot_digits = count_frac_digits(fullstr);
 
-  printf("digits: %d %d\n", nint_digits, nflot_digits);
+  //printf("digits: %d %d\n", nint_digits, nflot_digits);
+  //printf("!!! DBGPRN %LG %s\n", ldbl, fullstr);
 
   atom_t * bn_tlated  = alloc(atom_t, nint_digits + nflot_digits + hdrlen),
          * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
 
-  printf("!!! DBGPRN %s\n", fullstr);
 
   memcpy(bn_tlated, init, sz(atom_t, hdrlen));
 

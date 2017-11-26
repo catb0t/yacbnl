@@ -63,21 +63,21 @@ Test(a1b10, bna_ldbl) {
     z[HEADER_OFFSET + 4] = { TYP_NONE, 1, 3, FL_NONE, 1, 2, 3, 4 };
 
   for (uint16_t i = 0; i < bna_real_len(a); i++) {
-    printf("%d ", a[i]);
+    //printf("%d ", a[i]);
   }
   cr_assert_arr_eq(z, a, sz(atom_t, 4 + HEADER_OFFSET));
 
-
   free(a);
 
-  a = to_digit_array(153452.2352344, 0, FL_SIGN, TYP_NONE);
-  atom_t y[HEADER_OFFSET + 6 + 7] = { TYP_NONE, 6, 7, FL_SIGN, 1, 5, 3, 4, 5, 2, 2, 3, 5, 2, 3, 4, 4 };
+  #define BNALDBL_LEN 3 + 3
+  a = to_digit_array((ldbl_t) 155.235, 0, FL_SIGN, TYP_NONE);
+  atom_t y[HEADER_OFFSET + BNALDBL_LEN] = { TYP_NONE, 3, 3, FL_SIGN, 1, 5, 5, 2, 3, 5 };
 
   for (uint16_t i = 0; i < bna_real_len(a); i++) {
-    printf("%d ", a[i]);
+    //printf("%d ", a[i]);
   }
 
-  cr_assert_arr_eq(y, a, sz(atom_t, 6 + 7 + HEADER_OFFSET));
+  cr_assert_arr_eq(y, a, sz(atom_t, BNALDBL_LEN + HEADER_OFFSET));
 
   free(a);
 
