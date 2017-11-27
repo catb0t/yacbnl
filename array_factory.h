@@ -162,7 +162,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 #ifdef PREFER_CHAR_CONV
 
     /* here begins the string implementation */
-    char* const str = alloc( ndigits + /* null term */ 2, char);
+    char* const str = alloc( char, ndigits + /* null term */ 2);
     snprintf(str, 21, "%" PRIu64 "", u64);
 
     for (atom_t i = 0; i < ndigits; i++) {

@@ -92,7 +92,7 @@ typedef enum{BN_NONE=0,BN_SIGN=FL_SIGN,BN_SNAN=FL_SIGN|FL_NAN,BN_SINF=FL_SIGN|FL
 #define MISC_UTIL_H
 bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps){return fabsl(a-b)<eps;}atom_t count_digits_u64(const uint64_t x){return(atom_t)floor(log10f((float)x)+1.f);}atom_t find_frac_beginning(const char*const str){const atom_t pre_len=(atom_t)strcspn(str,".");return(atom_t)(1U+(unsigned)pre_len);}atom_t count_frac_digits(const char*const str){return(atom_t)strspn(str+find_frac_beginning(str),"0123456789");}atom_t indexable_digits_u64(const uint64_t x){return(atom_t)floor(log10f((float)x));}atom_t get_left_nth_digit(const uint64_t x,const atom_t n){
 #ifdef PREFER_CHAR_CONV
-char*const str=alloc(22,char);snprintf(str,21,"%" PRIu64 "",x);const char d=str[n];free(str);return(atom_t)((unsigned)d-'0');
+char*const str=alloc(char,22);snprintf(str,21,"%" PRIu64 "",x);const char d=str[n];free(str);return(atom_t)((unsigned)d-'0');
 #else 
 const ldbl_t tpow=pow(10,indexable_digits_u64(x)-n),ldivr=((ldbl_t)x)/tpow;return(atom_t)(((uint64_t)ldivr)%10);
 #endif 
@@ -122,7 +122,7 @@ for(atom_t i=0;i<nint_digits;i++){bn_tlated[i+hdrlen]=get_left_nth_digit((uint64
 #endif 
 const char*const frac_str=fullstr+find_frac_beginning(fullstr);for(size_t i=0;i<nflot_digits;i++){bn_tlated[i+hdrlen+nint_digits]=(atom_t)((unsigned)frac_str[i]-'0');}}free(init),free(fullstr);return bn_tlated;}static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags){const bool using_base256=metadata&TYP_ZENZ;const atom_t ndigits=count_digits_u64(u64),hdrlen=meta_header_offset(metadata);atom_t*bn_tlated=alloc(atom_t,ndigits+hdrlen),*const init=make_array_header(metadata,ndigits,0,flags);memcpy(bn_tlated,init,sz(atom_t,hdrlen));free(init);if(using_base256){char*const str=alloc(char,ndigits+2);snprintf(str,21,"%" PRIu64 "",u64);free(str);}else{
 #ifdef PREFER_CHAR_CONV
-char*const str=alloc(ndigits+2,char);snprintf(str,21,"%" PRIu64 "",u64);for(atom_t i=0;i<ndigits;i++){bn_tlated[i+hdrlen]=(atom_t)((unsigned)str[i]-'0');}free(str);
+char*const str=alloc(char,ndigits+2);snprintf(str,21,"%" PRIu64 "",u64);for(atom_t i=0;i<ndigits;i++){bn_tlated[i+hdrlen]=(atom_t)((unsigned)str[i]-'0');}free(str);
 #else 
 for(atom_t i=0;i<ndigits;i++){bn_tlated[i+hdrlen]=get_left_nth_digit(u64,i);}
 #endif 

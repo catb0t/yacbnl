@@ -67,7 +67,7 @@ atom_t indexable_digits_u64 (const uint64_t x) {
 atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 #ifdef PREFER_CHAR_CONV
 
-  char* const str = alloc(22, char);
+  char* const str = alloc(char, 22);
   snprintf(str, 21, "%" PRIu64 "", x);
 
   const char d = str[n];
