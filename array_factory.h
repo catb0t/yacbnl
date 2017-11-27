@@ -121,7 +121,14 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   free(init); // ~3
 
   if (is_base256) {
-    // TODO
+    /* convert fullstr to array representation */
+    uint16_t len, int_len;
+    atom_t* as_digits = ldbl_digits_to_b256(fullstr, &len, &int_len, false /* not little endian*/);
+
+    free(fullstr);
+    /* just copy the data into the rest of the array */
+    memcpy(bn_tlated + hdrlen, as_digits, len);
+
   } else /* base 10 */ {
 
       /* going to do the integral component */
