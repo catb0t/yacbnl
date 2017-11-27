@@ -85,14 +85,16 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
   /* put the entire value into a string, which may have trailing zeroes */
-  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */);
+  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */); // 1
   snprintf(fullstr, sigfigs + 2 /* sep */, "%LG", ldbl);
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV
+    // naive string ops
     nint_digits  = (atom_t) strcspn(fullstr, "."),
 #else /* ! PREFER_CHAR_CONV */
+    // O(1) maths
     nint_digits  = count_digits_u64( (uint64_t) floorl(ldbl) ),
 #endif /* PREFER_CHAR_CONV */
     nflot_digits = count_frac_digits(fullstr);
@@ -100,31 +102,39 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   //printf("digits: %d %d\n", nint_digits, nflot_digits);
   //printf("!!! DBGPRN %LG %s\n", ldbl, fullstr);
 
-  atom_t * bn_tlated  = alloc(atom_t, nint_digits + nflot_digits + hdrlen),
-         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+  /* make space for the entire new data and store the metadata as a header */
+  atom_t *  bn_tlated = alloc(atom_t, nint_digits + nflot_digits + hdrlen),  // 2
+         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags); // 3
 
-
+  /* put the new header in the initial section of new data */
   memcpy(bn_tlated, init, sz(atom_t, hdrlen));
+  free(init); // ~3
 
   if (is_base256) {
-
-  } else {
+    // TODO
+  } else /* base 10 */ {
 
       /* going to do the integral component */
 #ifdef PREFER_CHAR_CONV
-    char* const integ_str = strndup(fullstr, nint_digits);
+    /* more naive simple string operations */
+    char* const integ_str = strndup(fullstr, nint_digits); // 4
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) integ_str[i] - '0');
     }
-    free(integ_str);
+    free(integ_str); // ~4
 #else /* ! PREFER_CHAR_CONV */
+    /* because it is integral we can do this part with integer math */
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = get_left_nth_digit( (uint64_t) floorl(ldbl), i);
     }
 #endif /* PREFER_CHAR_CONV */
 
-    /* going to do the fractional component */
-    // must be done with string
+    /*
+      going to do the fractional component
+      could be done by multiplying the fractional part into integrality
+      -- but that would not be worth the complexity, because it would require
+      you to know the answer (the number of significant digits) ahead of time
+    */
     const char* const frac_str = fullstr + find_frac_beginning(fullstr);
 
     for (size_t i = 0; i < nflot_digits; i++) {
@@ -132,43 +142,49 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     }
 
   }
-
-  free(init), free(fullstr);
-  return bn_tlated;
+  free(fullstr); //  ~1
+  return bn_tlated; // 2
 } /* impl_to_digit_array_ldbl */
 
 static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags) {
 
-  const bool using_base256 = metadata & TYP_ZENZ;
+  /*
+    TODO: add BIG support (?)
+  */
+  const bool using_base256 = meta_is_base256(metadata);
 
+  /* number of digits we'll need and the length of the header we'll need */
   const atom_t ndigits = count_digits_u64(u64),
                 hdrlen = meta_header_offset(metadata);
 
+  /* now we can allocate the right size and make a header */
+  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen), // 1
+       * const init = make_array_header(metadata, ndigits, 0, flags); // 2
 
-  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen),
-       * const init = make_array_header(metadata, ndigits, 0, flags);
-
+  /* put the new header in the initial section of new data */
   memcpy(bn_tlated, init, sz(atom_t, hdrlen));
-  free(init);
+  free(init); // ~2
 
+  /* going to use base 256 */
   if (using_base256) {
-    char* const str = alloc( char, ndigits + /* null term */ 2);
-    snprintf(str, 21, "%" PRIu64 "", u64);
+    // TODO (this does nothing except waste cycles)
+    char* const str = alloc( char, ndigits + /* null term */ 2); // 3
+    snprintf(str, 21, "%" PRIu64 "", u64); // 21 is max length for a uint64_t + 1
 
-    free(str);
+    free(str); // ~3
 
   } else {
 
 #ifdef PREFER_CHAR_CONV
 
     /* here begins the string implementation */
-    char* const str = alloc( char, ndigits + /* null term */ 2);
+    char* const str = alloc( char, ndigits + /* null term */ 2); // 4
     snprintf(str, 21, "%" PRIu64 "", u64);
 
     for (atom_t i = 0; i < ndigits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) str[i] - '0');
     }
-    free(str);
+    free(str); // ~4
     /* here ends the string implementation */
 
 #else /* ! PREFER_CHAR_CONV (default) */
@@ -182,20 +198,8 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   }
 
-  return bn_tlated;
+  return bn_tlated; // 1
 } /* impl_to_digit_array_u64 */
-
-/* !! BIG !! */
-
-
-/*static atom_t* impl_to_dec_bigarray_u64 (const uint64_t u64, const atom_t flags) {
-  return NULL;
-}
-
-static atom_t* impl_to_dec_bigarray_ldbl (const ldbl_t ldbl, const atom_t flags) {
-  return NULL;
-}
-*/
 
 #endif /* end of include guard: BNA_H */
 

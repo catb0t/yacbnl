@@ -6,8 +6,8 @@ install:
   - sudo apt-get install criterion
 
 script:
-  - make normal test CMD_ARGS='-I/usr/include'
+  - make normal test
   - bin/test_yacbnl
-  - make normal test CMD_ARGS='-I/usr/include -DPREFER_CHAR_CONV'
+  - make normal test CMD_ARGS='-DPREFER_CHAR_CONV'
   - bin/test_yacbnl
 
