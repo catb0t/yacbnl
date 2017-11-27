@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -502,21 +503,6 @@ uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
   return samb_twoba_to_u16(arr[0], arr[1]);
 }
 
-/*atom_t* u64_to_octba (const uint64_t n) {
-
-  return NULL;
-}
-
-uint64_t octba_to_u64 (const atom_t* const bytes) {
-  uint64_t result = 0;
-
-  for (size_t i = 0; i < CHAR_BIT; i++) {
-    result |= (uint64_t) bytes[i] << ( (CHAR_BIT - (i + 1) ) * CHAR_BIT );
-  }
-
-  return result;
-}
-*/
 #endif /* end of include guard: ADDR_INTERP_H */
 #ifndef BASE256_H
 #define BASE256_H
@@ -774,7 +760,7 @@ static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digi
 atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t value_flags, const atom_t metadata) {
 
   const atom_t flags = ldbl_in < 0 ? value_flags | FL_SIGN : value_flags;
-  const ldbl_t ldbl   = ldbl_in < 0 ? fabsl(ldbl_in) : ldbl_in;
+  const ldbl_t ldbl  = ldbl_in < 0 ? fabsl(ldbl_in) : ldbl_in;
 
   // not zero so we'll use it
   if ( ! compare_eps(ldbl, 0.f, 1e-11) ) {
@@ -795,6 +781,16 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 
 /* IMPLEMENTATIONS */
 
+/*
+  ldbl_t, atom_t, atom_t -> atom_t*
+
+  represent a long double number as an array of digits
+
+  the values of metadata and flags are copied into the resulting array
+
+  the caller should have checked whether ldbl is within 1e-11 of 0, therefore,
+    this check is not done
+*/
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadata, const atom_t flags) {
 
   /* important metadata flags */
@@ -868,15 +864,28 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   return bn_tlated; // 2
 } /* impl_to_digit_array_ldbl */
 
+/*
+  uint64_t, atom_t, atom_t -> atom_t*
+
+  represent a uint64_t value as an array of digits
+
+  the values of metadata and flags are copied into the resulting array
+
+  the caller should have checked whether ldbl is 0, therefore, this check is
+    not done
+*/
 static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags) {
 
   /*
     TODO: add BIG support (?)
   */
   const bool using_base256 = meta_is_base256(metadata);
+                    //is_big = meta_is_big(metadata);
 
   /* number of digits we'll need and the length of the header we'll need */
-  const atom_t ndigits = count_digits_u64(u64),
+  const atom_t ndigits = using_base256 ?
+                            count_b256_digits_u64(u64) :
+                            count_digits_u64(u64),
                 hdrlen = meta_header_offset(metadata);
 
   /* now we can allocate the right size and make a header */
@@ -889,11 +898,16 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   /* going to use base 256 */
   if (using_base256) {
-    // TODO (this does nothing except waste cycles)
     char* const str = alloc( char, ndigits + /* null term */ 2); // 3
     snprintf(str, 21, "%" PRIu64 "", u64); // 21 is max length for a uint64_t + 1
 
+    /* convert to array representation */
+    uint16_t len, int_len;
+    atom_t* as_digits = ldbl_digits_to_b256(str, &len, &int_len, false /* not little endian*/);
+
     free(str); // ~3
+    /* just copy the data into the rest of the array */
+    memcpy(bn_tlated + hdrlen, as_digits, len);
 
   } else {
 

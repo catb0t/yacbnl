@@ -2,6 +2,7 @@
 src=$(cat bn_common.h misc_util.h addr_interp.h base256.h array_factory.h bignum.h | grep -v "#include")
 includes="#include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

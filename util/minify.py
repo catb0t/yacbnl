@@ -5,13 +5,16 @@
 #     under certain conditions; read LICENSE for details.
 
 import argparse
-import sys
 import re
-import os  # SEEK_END etc.
+# import sys
+# import os  # SEEK_END etc.
 
-# Ops: ops that may be spaced out in the code but we can trim the whitespace before and after
-# Spaced ops are operators that we need to append with one trailing space because of their syntax (e.g. keywords).
-# NB: theses ops are the SUPPORTED ones and these lists may not be complete as per the Standard
+# Ops: ops that may be spaced out in the code but we can trim the whitespace
+#    before and after
+# Spaced ops are operators that we need to append with one trailing space
+#    because of their syntax (e.g. keywords).
+# NB: theses ops are the SUPPORTED ones and these lists may not be complete as
+#    per the Standard
 OPS = [
     '+', '-', '*', '/', '%', '++', '--',
     '+=', '-=', '*=', '/=', '%=', '=', '==', '!=',
@@ -20,8 +23,9 @@ OPS = [
     '(', ')', '{', '}', ';', 'else'
 ]
 SPACED_OPS = ['else']
-UNARY_OPS= ["+", "-", "&", "!", "*"]
+UNARY_OPS = ["+", "-", "&", "!", "*"]
 PREPROCESSOR_TOKEN = '#'
+
 
 def remove_everything_between(subs1, subs2, line):
     regex = re.compile(subs1 + r'.*' + subs2)
@@ -51,7 +55,11 @@ def remove_multiline_comments(lines):
                 end_pos = line.find(end)
                 # inline multiline comment
                 if start_pos < end_pos:
-                    line = remove_everything_between(escaped_start, escaped_end, line)
+                    line = remove_everything_between(
+                        escaped_start,
+                        escaped_end,
+                        line
+                    )
                     in_comment = False
                 else:
                     line = remove_everything_past(escaped_start, line)
@@ -76,8 +84,12 @@ def remove_inline_comments(lines):
 
 
 def minify_operator(op):
-    """Returns a function applying a regex to strip away spaces on each side of an operator
-    Makes a special escape for operators that could be mistaken for regex control characters."""
+    """
+    Returns a function applying a regex to strip away spaces on each side of 
+        an operator
+    Makes a special escape for operators that could be mistaken for regex
+        control characters.
+    """
     to_compile = " *{} *".format(re.escape(op))
     regex = re.compile(to_compile)
     repl = op

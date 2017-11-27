@@ -17,6 +17,7 @@
 */
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,7 +121,7 @@ char*const integ_str=strndup(fullstr,nint_digits);for(atom_t i=0;i<nint_digits;i
 #else 
 for(atom_t i=0;i<nint_digits;i++){bn_tlated[i+hdrlen]=get_left_nth_digit((uint64_t)floorl(ldbl),i);}
 #endif 
-const char*const frac_str=fullstr+find_frac_beginning(fullstr);for(size_t i=0;i<nflot_digits;i++){bn_tlated[i+hdrlen+nint_digits]=(atom_t)((unsigned)frac_str[i]-'0');}}free(fullstr);return bn_tlated;}static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags){const bool using_base256=meta_is_base256(metadata);const atom_t ndigits=count_digits_u64(u64),hdrlen=meta_header_offset(metadata);atom_t*bn_tlated=alloc(atom_t,ndigits+hdrlen),*const init=make_array_header(metadata,ndigits,0,flags);memcpy(bn_tlated,init,sz(atom_t,hdrlen));free(init);if(using_base256){char*const str=alloc(char,ndigits+2);snprintf(str,21,"%" PRIu64 "",u64);free(str);}else{
+const char*const frac_str=fullstr+find_frac_beginning(fullstr);for(size_t i=0;i<nflot_digits;i++){bn_tlated[i+hdrlen+nint_digits]=(atom_t)((unsigned)frac_str[i]-'0');}}free(fullstr);return bn_tlated;}static atom_t*impl_to_digit_array_u64(const uint64_t u64,const atom_t metadata,const atom_t flags){const bool using_base256=meta_is_base256(metadata);const atom_t ndigits=using_base256 ?count_b256_digits_u64(u64):count_digits_u64(u64),hdrlen=meta_header_offset(metadata);atom_t*bn_tlated=alloc(atom_t,ndigits+hdrlen),*const init=make_array_header(metadata,ndigits,0,flags);memcpy(bn_tlated,init,sz(atom_t,hdrlen));free(init);if(using_base256){char*const str=alloc(char,ndigits+2);snprintf(str,21,"%" PRIu64 "",u64);uint16_t len,int_len;atom_t*as_digits=ldbl_digits_to_b256(str,&len,&int_len,false);free(str);memcpy(bn_tlated+hdrlen,as_digits,len);}else{
 #ifdef PREFER_CHAR_CONV
 char*const str=alloc(char,ndigits+2);snprintf(str,21,"%" PRIu64 "",u64);for(atom_t i=0;i<ndigits;i++){bn_tlated[i+hdrlen]=(atom_t)((unsigned)str[i]-'0');}free(str);
 #else 
