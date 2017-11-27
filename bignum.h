@@ -25,8 +25,11 @@ bignum_t* bignum_ctor (
     cx = fr = ex = 0;
   }
 
+  /* create a stack-allocated version of the structure */
   bignum_t st_bn = {
+    /* real value */
     .value = to_digit_array(ldbl, u64, flags, 0),
+    /* imaginary part is determined */
     .imgry = cx
       ? memcpy(
           alloc(atom_t, bna_real_len(opt_vals[0]->value)),
@@ -34,7 +37,7 @@ bignum_t* bignum_ctor (
           sz(atom_t, bna_real_len(opt_vals[0]->value))
         )
       : zalloc(atom_t, HEADER_OFFSET),
-
+    /* fractional (numerator / denominator) */
     .fracl = fr
       ? memcpy(
         alloc(atom_t, bna_real_len(opt_vals[1]->value)),
@@ -42,13 +45,14 @@ bignum_t* bignum_ctor (
         sz(atom_t, bna_real_len(opt_vals[1]->value))
       )
       : zalloc(atom_t, HEADER_OFFSET),
-
+    /* exponent */
     .expt = ex
       ? bignum_copy(opt_vals[2], true)
       : bignum_ctor(0, 0, 0, NULL)
   };
 
-  bignum_t* hp_bn = memcpy(alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
+  /* copy it to the heap */
+  bignum_t* hp_bn = memcpy( alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
 
   return hp_bn;
 }

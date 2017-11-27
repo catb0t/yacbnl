@@ -33,19 +33,4 @@ uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
   return samb_twoba_to_u16(arr[0], arr[1]);
 }
 
-/*atom_t* u64_to_octba (const uint64_t n) {
-
-  return NULL;
-}
-
-uint64_t octba_to_u64 (const atom_t* const bytes) {
-  uint64_t result = 0;
-
-  for (size_t i = 0; i < CHAR_BIT; i++) {
-    result |= (uint64_t) bytes[i] << ( (CHAR_BIT - (i + 1) ) * CHAR_BIT );
-  }
-
-  return result;
-}
-*/
 #endif /* end of include guard: ADDR_INTERP_H */

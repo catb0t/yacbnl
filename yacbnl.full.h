@@ -213,7 +213,7 @@ uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 /* base 256 conversions */
 char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
 uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
-atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len);
+atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
 atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
 
 #endif /* end of include guard: BN_COMMON_H */
@@ -522,9 +522,28 @@ uint64_t octba_to_u64 (const atom_t* const bytes) {
 #define BASE256_H
 
 
+/*
+  uint64_t, uint16_t*, bool -> atom_t*
+
+  transform a uint64_t to its base 256 representation
+
+  the value at len is changed to the new length of the representation
+
+  if little_endian is true, then the result is reversed
+
+  if value was 0 or len was NULL, then a valid pointer to an array of value 0
+    is returned
+
+  if len was NULL, it is not changed into a valid pointer
+
+  the return value is always a valid pointer
+*/
 atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
 
   if (! value || NULL == len) {
+    if (NULL != len) {
+      *len = 1;
+    }
     return zalloc(atom_t, 1);
   }
 
@@ -554,20 +573,60 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
   }
 }
 
-atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len) {
+/*
+  char*, uint16_t*, uint16_t* -> atom_t*
 
-  /* integer aprt before the decimal point */
+  transform a long double to its base 256 representation
+
+  the integer part is first and the fractional second
+
+  the value at len     is changed to the new entire length of the representation
+  the value at int_len is changed to the new length of the integer part, from
+    which can be inferred the length of the fractional part
+
+  if little_endian is true, then the result is reversed, and the fractional part
+    occurs first
+
+  if value was 0 or len was NULL, then a valid pointer to an array of value 0
+    is returned
+
+  if len was NULL, it is not changed into a valid pointer
+
+  the return value is always a valid pointer
+*/
+atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
+
+  if ( !strnlen(ldbl_digits, 22) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
+    if (NULL != len) {
+      *len = 1;
+    }
+    if (NULL != int_len) {
+      *int_len = 1;
+    }
+    return zalloc(atom_t, 1);
+  }
+
+  /* integer part before the decimal point */
   const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
 
-  char* const int_part  = strndup(ldbl_digits, pre_dec),
+  /* get the two parts of the number */
+  char* const int_part  = strndup(ldbl_digits, pre_dec), // 1
       /* flip the significant digits */
-      * const flot_part = str_reverse(ldbl_digits + pre_dec + 1); /* skip separator */
+      * const flot_part = str_reverse(ldbl_digits + pre_dec + /* skip separator */ 1); // 2
 
-  /* convert the strings to numbers */
+  /*
+    convert the strings to numbers
+    the error part is NULL
+  */
   const uint64_t lhs = strtoull(int_part,  NULL, B10_HIGH),
                  rhs = strtoull(flot_part, NULL, B10_HIGH);
 
-  free(int_part), free(flot_part);
+  if (EINVAL == errno || ERANGE == errno) {
+    free(int_part), free(flot_part); // ~1, ~2
+    return zalloc(atom_t, 1);
+  }
+
+  free(int_part), free(flot_part); // ~1, ~2
 
   uint16_t lhs_len, rhs_len;
   atom_t* const lhs_b256 = u64_digits_to_b256(lhs, &lhs_len, true),
@@ -581,11 +640,25 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
 
   free(lhs_b256), free(rhs_b256);
 
-  return final_concat;
+  if (little_endian) {
+    atom_t* const reversed = array_reverse(final_concat, *len);
+    free(final_concat);
+
+    return reversed;
+  } else {
+    return final_concat;
+  }
 }
 
 /* vvv little endian vvv */
 
+/*
+  atom_t*, uint16_t -> uint64_t
+
+  get the base 10 value out of a base 256 representation
+
+  if len is 0, 0 is returned
+*/
 uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
 
   if (! len) {
@@ -594,7 +667,6 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
 
   uint64_t result = 0;
 
-  //for (uint16_t i = 0; i < len; i++) {
   for (uint16_t i = len; i != 0; i--) {
     result += digits[i] * ( (uint64_t) powl(256, i) );
   }
@@ -602,34 +674,50 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   return result;
 }
 
+/*
+  atom_t*, uint16_t, uint16_t, uint16_t* -> char*
+
+  get the base 10 value of a base 256 representation of a long double
+
+  if atom_t* has no len, then an empty string is returned, not "0"
+*/
 char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len) {
 
-  if (! len) {
+  if (NULL == digits || ! len || NULL == out_int_len) {
     return make_empty_string();
   }
 
+  /* the length of the fractional part is gotten from subtraction */
   const uint16_t flot_len = (uint16_t) (len - int_len);
 
-  atom_t * const int_part  = memcpy(alloc(atom_t, int_len), digits, sz(atom_t, int_len)),
-         * const flot_part = memcpy(alloc(atom_t, len - int_len), digits + int_len, sz(atom_t, len - int_len));
+  /* copy the value's parts */
+  atom_t * const int_part  = memcpy( alloc(atom_t, int_len),  digits,           sz(atom_t, int_len)), // 1
+         * const flot_part = memcpy( alloc(atom_t, flot_len), digits + int_len, sz(atom_t, flot_len)); // 2
 
+  /* grab the base 10 values from the copied parts */
   const uint64_t int_val  = b256_to_u64_digits(int_part, int_len),
                  flot_val = b256_to_u64_digits(flot_part, flot_len);
-  free(int_part), free(flot_part);
+  free(int_part), free(flot_part); // ~1, ~2
 
+  /* get the nunmber of digits required to make a string */
   const uint16_t int_len10  = count_digits_u64(int_val),
                  flot_len10 = count_digits_u64(flot_val);
 
+  /* fractional part and final storage */
   char * const flot_str = alloc(atom_t, flot_len10),
        * const finalval = alloc(atom_t, int_len10 + flot_len10 + 1);
 
+  /* just do the fractional part */
   snprintf(flot_str, (uint16_t) (flot_len10 + 1), "%" PRIu64 "", flot_val);
 
+  /* big-endian version of the fractional part */
   char* const flot_str_be = str_reverse(flot_str);
   free(flot_str);
 
+  /* combine the flipped fractional part with the integral part */
   snprintf(finalval, (uint16_t) (int_len10 + flot_len10 + /* null + sep */ 2), "%" PRIu64 ".%s", int_val, flot_str_be);
 
+  /* record the integer length */
   *out_int_len = count_digits_u64(int_val);
 
   return finalval;
@@ -719,14 +807,16 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
 
   /* put the entire value into a string, which may have trailing zeroes */
-  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */);
+  char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */); // 1
   snprintf(fullstr, sigfigs + 2 /* sep */, "%LG", ldbl);
 
   const atom_t
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV
+    // naive string ops
     nint_digits  = (atom_t) strcspn(fullstr, "."),
 #else /* ! PREFER_CHAR_CONV */
+    // O(1) maths
     nint_digits  = count_digits_u64( (uint64_t) floorl(ldbl) ),
 #endif /* PREFER_CHAR_CONV */
     nflot_digits = count_frac_digits(fullstr);
@@ -734,31 +824,39 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   //printf("digits: %d %d\n", nint_digits, nflot_digits);
   //printf("!!! DBGPRN %LG %s\n", ldbl, fullstr);
 
-  atom_t * bn_tlated  = alloc(atom_t, nint_digits + nflot_digits + hdrlen),
-         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags);
+  /* make space for the entire new data and store the metadata as a header */
+  atom_t *  bn_tlated = alloc(atom_t, nint_digits + nflot_digits + hdrlen),  // 2
+         * const init = make_array_header(metadata, nint_digits, nflot_digits, flags); // 3
 
-
+  /* put the new header in the initial section of new data */
   memcpy(bn_tlated, init, sz(atom_t, hdrlen));
+  free(init); // ~3
 
   if (is_base256) {
-
-  } else {
+    // TODO
+  } else /* base 10 */ {
 
       /* going to do the integral component */
 #ifdef PREFER_CHAR_CONV
-    char* const integ_str = strndup(fullstr, nint_digits);
+    /* more naive simple string operations */
+    char* const integ_str = strndup(fullstr, nint_digits); // 4
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) integ_str[i] - '0');
     }
-    free(integ_str);
+    free(integ_str); // ~4
 #else /* ! PREFER_CHAR_CONV */
+    /* because it is integral we can do this part with integer math */
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = get_left_nth_digit( (uint64_t) floorl(ldbl), i);
     }
 #endif /* PREFER_CHAR_CONV */
 
-    /* going to do the fractional component */
-    // must be done with string
+    /*
+      going to do the fractional component
+      could be done by multiplying the fractional part into integrality
+      -- but that would not be worth the complexity, because it would require
+      you to know the answer (the number of significant digits) ahead of time
+    */
     const char* const frac_str = fullstr + find_frac_beginning(fullstr);
 
     for (size_t i = 0; i < nflot_digits; i++) {
@@ -766,43 +864,49 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     }
 
   }
-
-  free(init), free(fullstr);
-  return bn_tlated;
+  free(fullstr); //  ~1
+  return bn_tlated; // 2
 } /* impl_to_digit_array_ldbl */
 
 static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags) {
 
-  const bool using_base256 = metadata & TYP_ZENZ;
+  /*
+    TODO: add BIG support (?)
+  */
+  const bool using_base256 = meta_is_base256(metadata);
 
+  /* number of digits we'll need and the length of the header we'll need */
   const atom_t ndigits = count_digits_u64(u64),
                 hdrlen = meta_header_offset(metadata);
 
+  /* now we can allocate the right size and make a header */
+  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen), // 1
+       * const init = make_array_header(metadata, ndigits, 0, flags); // 2
 
-  atom_t* bn_tlated = alloc(atom_t, ndigits + hdrlen),
-       * const init = make_array_header(metadata, ndigits, 0, flags);
-
+  /* put the new header in the initial section of new data */
   memcpy(bn_tlated, init, sz(atom_t, hdrlen));
-  free(init);
+  free(init); // ~2
 
+  /* going to use base 256 */
   if (using_base256) {
-    char* const str = alloc( char, ndigits + /* null term */ 2);
-    snprintf(str, 21, "%" PRIu64 "", u64);
+    // TODO (this does nothing except waste cycles)
+    char* const str = alloc( char, ndigits + /* null term */ 2); // 3
+    snprintf(str, 21, "%" PRIu64 "", u64); // 21 is max length for a uint64_t + 1
 
-    free(str);
+    free(str); // ~3
 
   } else {
 
 #ifdef PREFER_CHAR_CONV
 
     /* here begins the string implementation */
-    char* const str = alloc( char, ndigits + /* null term */ 2);
+    char* const str = alloc( char, ndigits + /* null term */ 2); // 4
     snprintf(str, 21, "%" PRIu64 "", u64);
 
     for (atom_t i = 0; i < ndigits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) str[i] - '0');
     }
-    free(str);
+    free(str); // ~4
     /* here ends the string implementation */
 
 #else /* ! PREFER_CHAR_CONV (default) */
@@ -816,20 +920,8 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   }
 
-  return bn_tlated;
+  return bn_tlated; // 1
 } /* impl_to_digit_array_u64 */
-
-/* !! BIG !! */
-
-
-/*static atom_t* impl_to_dec_bigarray_u64 (const uint64_t u64, const atom_t flags) {
-  return NULL;
-}
-
-static atom_t* impl_to_dec_bigarray_ldbl (const ldbl_t ldbl, const atom_t flags) {
-  return NULL;
-}
-*/
 
 #endif /* end of include guard: BNA_H */
 
@@ -859,8 +951,11 @@ bignum_t* bignum_ctor (
     cx = fr = ex = 0;
   }
 
+  /* create a stack-allocated version of the structure */
   bignum_t st_bn = {
+    /* real value */
     .value = to_digit_array(ldbl, u64, flags, 0),
+    /* imaginary part is determined */
     .imgry = cx
       ? memcpy(
           alloc(atom_t, bna_real_len(opt_vals[0]->value)),
@@ -868,7 +963,7 @@ bignum_t* bignum_ctor (
           sz(atom_t, bna_real_len(opt_vals[0]->value))
         )
       : zalloc(atom_t, HEADER_OFFSET),
-
+    /* fractional (numerator / denominator) */
     .fracl = fr
       ? memcpy(
         alloc(atom_t, bna_real_len(opt_vals[1]->value)),
@@ -876,13 +971,14 @@ bignum_t* bignum_ctor (
         sz(atom_t, bna_real_len(opt_vals[1]->value))
       )
       : zalloc(atom_t, HEADER_OFFSET),
-
+    /* exponent */
     .expt = ex
       ? bignum_copy(opt_vals[2], true)
       : bignum_ctor(0, 0, 0, NULL)
   };
 
-  bignum_t* hp_bn = memcpy(alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
+  /* copy it to the heap */
+  bignum_t* hp_bn = memcpy( alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
 
   return hp_bn;
 }
