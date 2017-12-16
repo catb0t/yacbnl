@@ -155,6 +155,22 @@ typedef struct st_bignum_t {
 // the length of the fractional part
 #define      bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
 
+#define  bna_new_1b_10_u64(value, flags) to_digit_array(0, value, flags, TYP_NONE)
+#define bna_new_1b_256_u64(value, flags) to_digit_array(0, value, flags, TYP_ZENZ)
+
+#define  bna_new_2b_10_u64(value, flags) to_digit_array(0, value, flags, TYP_BIG)
+#define bna_new_2b_256_u64(value, flags) to_digit_array(0, value, flags, TYP_BIG | TYP_ZENZ)
+
+/* */
+
+#define  bna_new_1b_10_ldbl(value) to_digit_array(value, 0, flags, TYP_NONE)
+#define bna_new_1b_256_ldbl(value) to_digit_array(value, 0, flags, TYP_ZENZ)
+
+#define  bna_new_2b_10_ldbl(value) to_digit_array(value, 0, flags, TYP_BIG)
+#define bna_new_2b_256_ldbl(value) to_digit_array(value, 0, flags, TYP_BIG | TYP_ZENZ)
+
+
+
 // multiplies a size by the size of the typename to get the size of a space
 #define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
@@ -363,11 +379,11 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
 */
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
-  atom_t* result = zalloc(atom_t, len);
+  atom_t* result = alloc(atom_t, len);
 
   if (len) {
     for (uint16_t i = 0; i < len; i++) {
-      result[i] = arr[ i - len ];
+      result[i] = arr[ (len - 1) - i ];
     }
   }
 
@@ -378,6 +394,8 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
   atom_t*, atom_t*, uint16_t, uint16_t -> atom_t*
 
   glue two arrays together
+
+  always returns valid unique pointers
 */
 atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
   if (! (a_len + b_len) ) {
@@ -636,7 +654,15 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
   }
 }
 
-/* vvv little endian vvv */
+/*
+
+    vvv little endian vvv
+
+  the following functions expect and return data with the least significant part
+    at the end, rather than at the beginning
+
+  this is inline with how numbers are usually written in both base 10 and base 2
+*/
 
 /*
   atom_t*, uint16_t -> uint64_t
@@ -653,7 +679,7 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
 
   uint64_t result = 0;
 
-  for (uint16_t i = len; i != 0; i--) {
+  for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
     result += digits[i] * ( (uint64_t) powl(256, i) );
   }
 
@@ -829,7 +855,15 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   free(init); // ~3
 
   if (is_base256) {
-    // TODO
+    /* convert fullstr to array representation */
+    uint16_t len, int_len;
+    /* little endian*/
+    atom_t* as_digits = ldbl_digits_to_b256(fullstr, &len, &int_len, true);
+
+    free(fullstr);
+    /* just copy the data into the rest of the array */
+    memcpy(bn_tlated + hdrlen, as_digits, len);
+
   } else /* base 10 */ {
 
       /* going to do the integral component */
@@ -898,17 +932,15 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   /* going to use base 256 */
   if (using_base256) {
-    char* const str = alloc( char, ndigits + /* null term */ 2); // 3
-    snprintf(str, 21, "%" PRIu64 "", u64); // 21 is max length for a uint64_t + 1
-
     /* convert to array representation */
-    uint16_t len, int_len;
-    atom_t* as_digits = ldbl_digits_to_b256(str, &len, &int_len, false /* not little endian*/);
+    uint16_t len;
+    /* little endian*/
+    atom_t* as_digits = u64_digits_to_b256(u64, &len, true);
 
-    free(str); // ~3
     /* just copy the data into the rest of the array */
     memcpy(bn_tlated + hdrlen, as_digits, len);
 
+    free(as_digits);
   } else {
 
 #ifdef PREFER_CHAR_CONV

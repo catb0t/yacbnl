@@ -144,11 +144,11 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
 */
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
-  atom_t* result = zalloc(atom_t, len);
+  atom_t* result = alloc(atom_t, len);
 
   if (len) {
     for (uint16_t i = 0; i < len; i++) {
-      result[i] = arr[ i - len ];
+      result[i] = arr[ (len - 1) - i ];
     }
   }
 
@@ -159,6 +159,8 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
   atom_t*, atom_t*, uint16_t, uint16_t -> atom_t*
 
   glue two arrays together
+
+  always returns valid unique pointers
 */
 atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
   if (! (a_len + b_len) ) {

@@ -49,3 +49,6 @@ test: $(FILES)
 clean:
 	rm ./bin/* -r
 	rm ./yacbnl.full.h
+
+min:
+	$(CC) yacbnl.min.h $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -c -o yacbnl.o

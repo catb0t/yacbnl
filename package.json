@@ -14,5 +14,5 @@
     "README.md",
     "LICENSE"
   ],
-  "install": "make"
+  "install": "make min"
 }

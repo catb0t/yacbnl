@@ -156,6 +156,22 @@ typedef struct st_bignum_t {
 // the length of the fractional part
 #define      bna_frac_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 3) : (bna)[2] )
 
+#define  bna_new_1b_10_u64(value, flags) to_digit_array(0, value, flags, TYP_NONE)
+#define bna_new_1b_256_u64(value, flags) to_digit_array(0, value, flags, TYP_ZENZ)
+
+#define  bna_new_2b_10_u64(value, flags) to_digit_array(0, value, flags, TYP_BIG)
+#define bna_new_2b_256_u64(value, flags) to_digit_array(0, value, flags, TYP_BIG | TYP_ZENZ)
+
+/* */
+
+#define  bna_new_1b_10_ldbl(value) to_digit_array(value, 0, flags, TYP_NONE)
+#define bna_new_1b_256_ldbl(value) to_digit_array(value, 0, flags, TYP_ZENZ)
+
+#define  bna_new_2b_10_ldbl(value) to_digit_array(value, 0, flags, TYP_BIG)
+#define bna_new_2b_256_ldbl(value) to_digit_array(value, 0, flags, TYP_BIG | TYP_ZENZ)
+
+
+
 // multiplies a size by the size of the typename to get the size of a space
 #define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))

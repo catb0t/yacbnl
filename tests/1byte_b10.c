@@ -46,7 +46,7 @@ Test(a1b10, bna_s64) {
   free(a);
 
   a = to_digit_array(0, 1, FL_SIGN, TYP_NONE);
-  atom_t n1[HEADER_OFFSET + 4] = { TYP_NONE, 1, 0, FL_SIGN, 1 };
+  atom_t n1[HEADER_OFFSET + 1] = { TYP_NONE, 1, 0, FL_SIGN, 1 };
 
   cr_assert_arr_eq(n1, a, sz(atom_t, 1 + HEADER_OFFSET));
   free(a);

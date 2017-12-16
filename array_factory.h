@@ -123,7 +123,8 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   if (is_base256) {
     /* convert fullstr to array representation */
     uint16_t len, int_len;
-    atom_t* as_digits = ldbl_digits_to_b256(fullstr, &len, &int_len, false /* not little endian*/);
+    /* little endian*/
+    atom_t* as_digits = ldbl_digits_to_b256(fullstr, &len, &int_len, true);
 
     free(fullstr);
     /* just copy the data into the rest of the array */
@@ -197,17 +198,15 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
   /* going to use base 256 */
   if (using_base256) {
-    char* const str = alloc( char, ndigits + /* null term */ 2); // 3
-    snprintf(str, 21, "%" PRIu64 "", u64); // 21 is max length for a uint64_t + 1
-
     /* convert to array representation */
-    uint16_t len, int_len;
-    atom_t* as_digits = ldbl_digits_to_b256(str, &len, &int_len, false /* not little endian*/);
+    uint16_t len;
+    /* little endian*/
+    atom_t* as_digits = u64_digits_to_b256(u64, &len, true);
 
-    free(str); // ~3
     /* just copy the data into the rest of the array */
     memcpy(bn_tlated + hdrlen, as_digits, len);
 
+    free(as_digits);
   } else {
 
 #ifdef PREFER_CHAR_CONV

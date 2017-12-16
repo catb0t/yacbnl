@@ -131,7 +131,15 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
   }
 }
 
-/* vvv little endian vvv */
+/*
+
+    vvv little endian vvv
+
+  the following functions expect and return data with the least significant part
+    at the end, rather than at the beginning
+
+  this is inline with how numbers are usually written in both base 10 and base 2
+*/
 
 /*
   atom_t*, uint16_t -> uint64_t
@@ -148,7 +156,7 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
 
   uint64_t result = 0;
 
-  for (uint16_t i = len; i != 0; i--) {
+  for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
     result += digits[i] * ( (uint64_t) powl(256, i) );
   }
 

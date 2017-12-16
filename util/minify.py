@@ -85,7 +85,7 @@ def remove_inline_comments(lines):
 
 def minify_operator(op):
     """
-    Returns a function applying a regex to strip away spaces on each side of 
+    Returns a function applying a regex to strip away spaces on each side of
         an operator
     Makes a special escape for operators that could be mistaken for regex
         control characters.
@@ -202,7 +202,7 @@ def minify_source(orig_source, args=None):
     if keep_newlines is True:
         minified = args.newline.join(lines)
     else:
-        minified = ''.join(lines)
+        minified = ' '.join(lines)
 
     # There is no syntactic requirement of an operator being spaced from a '{' in C so
     # if we added unnecessary space when processing spaced ops, we can fix it here
