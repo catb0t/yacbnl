@@ -12,7 +12,7 @@ workspace "yacbnl"
       "-Wcast-align", "-Wcast-qual", "-Wunreachable-code", "-Wstrict-overflow=5",
       "-Wwrite-strings", "-Wconversion", "--pedantic-errors",
       "-Wredundant-decls", "-Werror=maybe-uninitialized",
-      -- "-Wbad-function-cast", 
+      -- "-Wbad-function-cast",
       "-Wmissing-declarations", "-Wmissing-parameter-type",
       "-Wmissing-prototypes", "-Wnested-externs", "-Wold-style-declaration",
       "-Wold-style-definition", "-Wstrict-prototypes", "-Wpointer-sign"
@@ -56,7 +56,7 @@ workspace "yacbnl"
     links { "m", "criterion", "yacbnl" }
 
     targetdir "bin/%{cfg.buildcfg}"
-    targetprefix "test_"
+    targetname "test_%{wks.name}"
 
 --  project "minify"
 --    kind "utility"
