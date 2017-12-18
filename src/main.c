@@ -1,4 +1,4 @@
-#include "lib/bn_common.h"
+#include "yacbnl.c"
 
 int main(void) {
   puts("main");
