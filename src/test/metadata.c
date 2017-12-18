@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../yacbnl.h"
+#include "../lib/bn_common.h"
 
 Test(metadata, macros) {
   atom_t a[HEADER_OFFSET + 3] = { TYP_NONE, 1, 2, FL_SIGN, 1, 4, 5};

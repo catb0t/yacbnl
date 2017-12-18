@@ -2,15 +2,12 @@
 #define BNA_H
 
 #include "bn_common.h"
-#include "misc_util.h"
-#include "addr_interp.h"
-#include "base256.h"
 
 static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl,  const atom_t metadata, const atom_t flags);
 static atom_t*  impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadata, const atom_t flags);
 
 /* create the first 4 or 6 bytes at the beginning of every digit array */
-static atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
+atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags) {
 
   const atom_t  hdrlen = meta_header_offset(metadata);
   atom_t* const header = zalloc(atom_t, hdrlen);

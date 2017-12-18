@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../yacbnl.h"
+#include "../lib/bn_common.h"
 
 Test(common, countint) {
   cr_assert_eq(1,  count_digits_u64(1) );

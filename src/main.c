@@ -1,7 +1,7 @@
-#include "yacbnl.h"
+#include "lib/bn_common.h"
 
 int main(void) {
-
+  puts("main");
 /*  atom_t* a = bna_from_flot(1.234f, BN_NONE);
   free(a);
 */  //printf("%d\n", count_frac_digits("1234.0002"));
@@ -30,4 +30,5 @@ int main(void) {
     printf("%d ", a[i]);
   }
   return EXIT_SUCCESS;
-*/}
+*/
+}

@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../yacbnl.h"
+#include "../lib/bn_common.h"
 
 /* base 256 single byte addressing */
 Test(a1b256, bna_u64) {

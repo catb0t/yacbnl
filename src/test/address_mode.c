@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../addr_interp.h"
+#include "../lib/bn_common.h"
 
 /* addressing mode functions */
 

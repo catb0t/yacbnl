@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../yacbnl.h"
+#include "../lib/bn_common.h"
 
 /* base 10 single byte addressing */
 

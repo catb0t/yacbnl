@@ -221,6 +221,7 @@ bignum_t* bignum_ctor (const ldbl_t ldbl, const uint64_t u64, const atom_t flags
 bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals);
 
 /* array creation */
+atom_t* make_array_header (const atom_t metadata, const uint16_t int_digits, const uint16_t flot_digits, const atom_t flags);
 atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t value_flags, const atom_t metadata);
 
 /* 2 byte addressing stuff */

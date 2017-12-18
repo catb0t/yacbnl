@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 
-#include "../base256.h"
+#include "../lib/bn_common.h"
 
 Test(b256_util, count) {
   cr_assert_eq(1, count_b256_digits_u64(1) );
