@@ -1,17 +1,8 @@
-function os.scandir(pth, dironly)
-  local m = os.matchstart(pth .. "/*")
-  local dirs = {}
-
-  while os.matchnext(m) do
-    this = os.matchname(m)
-    if not dironly or (dironly and not os.matchisfile(m)) then
-      table.insert(dirs, this)
-    end
-  end
-
-  os.matchdone(m)
-
-  return dirs
+function string:split (sep)
+    local sep, fields = sep or ":", {}
+    local pattern = string.format("([^%s]+)", sep)
+    self:gsub(pattern, function(c) fields[#fields+1] = c end)
+    return fields
 end
 
 workspace "yacbnl"
@@ -75,36 +66,65 @@ workspace "yacbnl"
   project "minify"
     kind "utility"
 
-    local new_test_file = "#include<criterion/criterion.h>\n#include\"../headers.h\"\n"
+    -- find python27
 
-    for test_file in io.popen("find ./src/test/ -type f -iregex '.*t_[a-z]*\\.c$'"):lines()
-    do
-      local new_lines = ""
-      for _, line in next, string.explode(io.readfile(test_file), "\n")
-      do
-        if not string.startswith(line, "#include")
-        then
-          new_lines = new_lines .. line .. "\n"
-        end
+    local python_interp = ""
+    if "windows" == os.target then
+      python_interp = path.join("C:", "Python27", "python.exe")
+    else
+      local pth, err = os.outputof("which python2.7")
+      if err > 0 then
+        print("can't minify without Python2.7 in $PATH")
+        os.exit(1)
       end
-      new_test_file = new_test_file .. new_lines .. "\n"
+      python_interp = pth:split(" ")[1]
     end
 
-    io.writefile(path.join(SOURCEDIR, "test", "_test.c"), new_test_file)
+    -- contains includes we don't want to filter out
+    local all_contents = io.readfile(path.join("src", "lib", "bn_common.h"))
 
+    -- c files all have exactly one include
+    for _, file in next, os.matchfiles(path.join("src", "lib", "*.c")) do
+      local this = io.readfile(file)
+      local lines = {}
+      for s in this:gmatch("[^\r\n]+") do
+        if not string.startswith(s, "#include") then
+          table.insert(lines, s .. "\n")
+        end
+      end
+      local final = table.concat(lines, "")
+
+      all_contents = all_contents .. "\n" .. final .. "\n"
+    end
+
+    -- write out full unminified contents
+    local unmin = path.join("min", "yacbnl.full.c")
+    io.writefile(unmin, all_contents)
+
+    -- minify
+    local min = path.join("min", "yacbnl.min.c")
+    local cmd = string.format("%s %s %s %s", python_interp, path.join("util", "minify.py"), "-w", unmin)
+    local min_contents, err = os.outputof(cmd)
+    if err > 0 then
+      print("error in minifying")
+      os.exit(1)
+    end
+    io.writefile(min, min_contents)
 
   project "clobber"
     kind "makefile"
 
+    local dirs = " bin obj min "
+
     -- on windows, clean like this
     filter "system:not windows"
       cleancommands {
-        "({RMDIR} bin obj *.make Makefile *.o -r 2>/dev/null; echo)"
+        "({RMDIR}" .. dirs .."*.make Makefile *.o -r 2>/dev/null; echo)"
       }
 
     -- otherwise, clean like this
     filter "system:windows"
       cleancommands {
         "{DELETE} *.make Makefile *.o",
-        "{RMDIR} bin obj"
+        "{RMDIR}" .. dirs
       }
