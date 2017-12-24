@@ -3,7 +3,7 @@ language: c
 install:
   - "yes | sudo add-apt-repository ppa:snaipewastaken/ppa"
   - sudo apt-get update
-  - sudo apt-get install criterion
+  - sudo apt-get install criterion criterion-dev
 
 script:
   - util/premake5-linux64 gmake
