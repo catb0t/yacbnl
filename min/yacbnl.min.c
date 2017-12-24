@@ -335,7 +335,7 @@ memcpy(bn_tlated+hdrlen,as_digits,len);
 
 #ifdef PREFER_CHAR_CONV
 
-char*const integ_str=strndup(fullstr,nint_digits);
+char*const integ_str=strndup_c(fullstr,nint_digits);
 for(atom_t i=0;i<nint_digits;i++){
 bn_tlated[i+hdrlen]=(atom_t)((unsigned)integ_str[i]-'0');
 }
@@ -468,7 +468,7 @@ return result;
 
 
 atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len,const bool little_endian){
-if(!strnlen(ldbl_digits,22)||NULL==ldbl_digits||NULL==len||NULL==int_len){
+if((0==strnlen_c(ldbl_digits,22))||NULL==ldbl_digits||NULL==len||NULL==int_len){
 if(NULL!=len){
 *len=1;
 }
@@ -480,7 +480,7 @@ return zalloc(atom_t,1);
 
 const uint16_t pre_dec=(uint16_t)strcspn(ldbl_digits,".");
 
-char*const int_part=strndup(ldbl_digits,pre_dec),
+char*const int_part=strndup_c(ldbl_digits,pre_dec),
 
 *const flot_part=str_reverse(ldbl_digits+pre_dec+1);
 

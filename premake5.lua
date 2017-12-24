@@ -113,7 +113,7 @@ workspace "yacbnl"
   project "clobber"
     kind "makefile"
 
-    local dirs = " bin obj min "
+    local dirs = " bin obj "
 
     -- on windows, clean like this
     filter "system:not windows"

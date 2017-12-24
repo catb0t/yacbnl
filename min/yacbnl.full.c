@@ -335,7 +335,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
       /* going to do the integral component */
 #ifdef PREFER_CHAR_CONV
     /* more naive simple string operations */
-    char* const integ_str = strndup(fullstr, nint_digits); // 4
+    char* const integ_str = strndup_c(fullstr, nint_digits); // 4
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) integ_str[i] - '0');
     }
@@ -468,7 +468,7 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
   the return value is always a valid pointer
 */
 atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
-  if ( !strnlen(ldbl_digits, 22) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
+  if ( (0 == strnlen_c(ldbl_digits, 22)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     if (NULL != len) {
       *len = 1;
     }
@@ -480,7 +480,7 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
   /* integer part before the decimal point */
   const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
   /* get the two parts of the number */
-  char* const int_part  = strndup(ldbl_digits, pre_dec), // 1
+  char* const int_part  = strndup_c(ldbl_digits, pre_dec), // 1
       /* flip the significant digits */
       * const flot_part = str_reverse(ldbl_digits + pre_dec + /* skip separator */ 1); // 2
   /*

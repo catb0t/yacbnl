@@ -77,7 +77,7 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
 */
 atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
 
-  if ( !strnlen(ldbl_digits, 22) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
+  if ( (0 == strnlen_c(ldbl_digits, 22)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     if (NULL != len) {
       *len = 1;
     }
@@ -91,7 +91,7 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
   const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
 
   /* get the two parts of the number */
-  char* const int_part  = strndup(ldbl_digits, pre_dec), // 1
+  char* const int_part  = strndup_c(ldbl_digits, pre_dec), // 1
       /* flip the significant digits */
       * const flot_part = str_reverse(ldbl_digits + pre_dec + /* skip separator */ 1); // 2
 

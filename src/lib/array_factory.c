@@ -132,7 +132,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
       /* going to do the integral component */
 #ifdef PREFER_CHAR_CONV
     /* more naive simple string operations */
-    char* const integ_str = strndup(fullstr, nint_digits); // 4
+    char* const integ_str = strndup_c(fullstr, nint_digits); // 4
     for (atom_t i = 0; i < nint_digits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) integ_str[i] - '0');
     }
