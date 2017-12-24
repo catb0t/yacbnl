@@ -111,7 +111,7 @@ workspace "yacbnl"
 
     -- minify
     local min = path.join("min", "yacbnl.min.c")
-    local cmd = string.format("%s %s %s %s", python_interp, path.join("util", "minify.py"), "-w", unmin)
+    local cmd = string.format("%s %s %s", python_interp, path.join("util", "minify.py"), unmin)
     local min_contents, err = os.outputof(cmd)
     if err > 0 then
       print("error in minifying")
