@@ -77,7 +77,7 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
 */
 atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
 
-  if ( (0 == strnlen_c(ldbl_digits, 22)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
+  if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     if (NULL != len) {
       *len = 1;
     }
@@ -157,7 +157,7 @@ uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   uint64_t result = 0;
 
   for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
-    result += digits[i] * ( (uint64_t) powl(256, i) );
+    result += digits[i] * ( (uint64_t) powl(ZENZ_BASE, i) );
   }
 
   return result;

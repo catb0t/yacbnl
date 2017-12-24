@@ -25,14 +25,13 @@ workspace "yacbnl"
     }
 
   filter "configurations:dbg"
-    optimize "Off"
-    symbols "On"
+    optimize "off"
+    symbols "on"
     buildoptions { "-ggdb3", "-O0" }
 
   filter "configurations:dist"
-    optimize "Full"
-    symbols "Off"
-    buildoptions { "-O3" }
+    optimize "full"
+    symbols "off"
 
   project "interact"
     kind "consoleapp"
@@ -43,6 +42,9 @@ workspace "yacbnl"
 
     targetdir "bin/%{cfg.buildcfg}/"
 
+    filter "configurations:dist"
+      buildoptions { "-O3", "-fomit-frame-pointer" }
+
   project "yacbnl"
     kind "staticlib"
 
@@ -51,6 +53,10 @@ workspace "yacbnl"
     links { "m" }
 
     targetdir "bin/%{cfg.buildcfg}/lib"
+
+    filter "configurations:dist"
+      buildoptions { "-O3", "-fomit-frame-pointer" }
+
 
   project "test"
     kind "consoleapp"
@@ -61,6 +67,9 @@ workspace "yacbnl"
 
     targetdir "bin/%{cfg.buildcfg}"
     targetname "test_%{wks.name}"
+
+    filter "configurations:dist"
+      buildoptions { "-O0", "-fomit-frame-pointer" }
 
   project "minify"
     kind "utility"

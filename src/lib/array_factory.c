@@ -52,7 +52,7 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
   const ldbl_t ldbl  = ldbl_in < 0 ? fabsl(ldbl_in) : ldbl_in;
 
   // not zero so we'll use it
-  if ( ! compare_eps(ldbl, 0.f, 1e-11) ) {
+  if ( ! compare_eps(ldbl, 0.f, COMPARE_EPS) ) {
 
     return impl_to_digit_array_ldbl(ldbl, metadata, flags);
 
@@ -89,7 +89,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
   /* length of the entire header section */
   const atom_t hdrlen    = meta_header_offset(metadata);
   /* upper bound on significant figures we can store in one array */
-  const uint32_t sigfigs = is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
+  const uint32_t sigfigs = is_big ? MAX_EXPORT_SIGFIGS_BIG : MAX_EXPORT_SIGFIGS;
 
   /* put the entire value into a string, which may have trailing zeroes */
   char * const fullstr  = alloc(char, sigfigs + 3 /* separator + null */); // 1
@@ -210,7 +210,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
     /* here begins the string implementation */
     char* const str = alloc( char, ndigits + /* null term */ 2); // 4
-    snprintf(str, 21, "%" PRIu64 "", u64);
+    snprintf(str, MAX_U64_DIGITS + 1, "%" PRIu64 "", u64);
 
     for (atom_t i = 0; i < ndigits; i++) {
       bn_tlated[i + hdrlen] = (atom_t) ((unsigned) str[i] - '0');

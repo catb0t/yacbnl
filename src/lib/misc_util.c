@@ -28,7 +28,7 @@ atom_t find_frac_beginning (const char* const str) {
   //begin_read = (atom_t) (1U + (unsigned) pre_len);
   const atom_t
     pre_len = (atom_t) strcspn(str, "."),
-    len  = (atom_t) strnlen_c(str, 30),
+    len  = (atom_t) strnlen_c(str, MAX_PRIMITIVE_LDBL_DIGITS),
     diff = (atom_t) (len - pre_len);
     /* found + 1 for separator */
 
@@ -52,7 +52,7 @@ atom_t find_frac_beginning (const char* const str) {
 */
 atom_t count_frac_digits (const char* const str) {
   const atom_t begin = find_frac_beginning(str);
-  if (1 == strnlen_c(str, 30) - begin) { return 1; }
+  if (1 == strnlen_c(str, MAX_PRIMITIVE_LDBL_DIGITS) - begin) { return 1; }
   return (atom_t) strspn(str + begin, "0123456789");
 }
 
@@ -82,8 +82,8 @@ atom_t indexable_digits_u64 (const uint64_t x) {
 atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 #ifdef PREFER_CHAR_CONV
 
-  char* const str = alloc(char, 22);
-  snprintf(str, 21, "%" PRIu64 "", x);
+  char* const str = alloc(char, MAX_U64_DIGITS + 2);
+  snprintf(str, MAX_U64_DIGITS + 1, "%" PRIu64 "", x);
 
   const char d = str[n];
   free(str);
@@ -91,11 +91,11 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 
 #else /* ! PREFER_CHAR_CONV */
 
-  const ldbl_t tpow  = pow(10, indexable_digits_u64(x) - n),
+  const ldbl_t tpow  = pow(DEC_BASE, indexable_digits_u64(x) - n),
                ldivr = ((ldbl_t) x) / tpow;
 
   //printf("%LG %LG\n", tpow, ldivr);
-  return (atom_t) (((uint64_t) ldivr) % 10);
+  return (atom_t) (((uint64_t) ldivr) % DEC_BASE);
 
 #endif /* PREFER_CHAR_CONV */
 }
@@ -111,7 +111,7 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 char* str_reverse (const char* const str) {
   if ( NULL == str ) { return NULL; }
 
-  size_t len = strnlen_c(str, MAX_SIGFIGS);
+  size_t len = strnlen_c(str, MAX_EXPORT_SIGFIGS);
   char* newp = NULL;
 
   if ( len < 2 ) {
@@ -139,7 +139,7 @@ char* str_reverse (const char* const str) {
   simple base 256 logarithm
 */
 float log256f (const float x) {
-  return logf(x) / logf(256);
+  return logf(x) / logf(ZENZ_BASE);
 }
 
 /*

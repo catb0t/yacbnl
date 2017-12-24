@@ -33,19 +33,33 @@
 #define HEADER_OFFSET ((atom_t) 4)
 #define HEADER_OFFSET_BIG ((atom_t) 6)
 
+#define DEC_BASE 10
+#define ZENZ_BASE 256
+#define COMPARE_EPS 1e-11
 
-#ifndef MAX_SIGFIGS
-#define MAX_SIGFIGS ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
+
+#ifndef MAX_EXPORT_SIGFIGS
+#define MAX_EXPORT_SIGFIGS ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
 #endif
 
 
-#ifndef MAX_SIGFIGS_BIG
-#define MAX_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
+#ifndef MAX_EXPORT_SIGFIGS_BIG
+#define MAX_EXPORT_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
 #endif
 
 
-#ifndef MAX_DOUBLE_KEPT_FIGS
-#define MAX_DOUBLE_KEPT_FIGS 200
+
+
+
+
+
+#ifndef MAX_PRIMITIVE_LDBL_DIGITS
+#define MAX_PRIMITIVE_LDBL_DIGITS 50
+#endif
+
+
+#ifndef MAX_U64_DIGITS
+#define MAX_U64_DIGITS 20
 #endif
 
 
@@ -276,7 +290,7 @@ atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value
 const atom_t flags=ldbl_in<0 ? value_flags|FL_SIGN : value_flags;
 const ldbl_t ldbl=ldbl_in<0 ? fabsl(ldbl_in): ldbl_in;
 
-if(!compare_eps(ldbl,0.f,1e-11)){
+if(!compare_eps(ldbl,0.f,COMPARE_EPS)){
 return impl_to_digit_array_ldbl(ldbl,metadata,flags);
 
 }else if(0!=u64){
@@ -301,7 +315,7 @@ is_big=meta_is_big(metadata);
 
 const atom_t hdrlen=meta_header_offset(metadata);
 
-const uint32_t sigfigs=is_big ? MAX_SIGFIGS_BIG : MAX_SIGFIGS;
+const uint32_t sigfigs=is_big ? MAX_EXPORT_SIGFIGS_BIG : MAX_EXPORT_SIGFIGS;
 
 char*const fullstr=alloc(char,sigfigs+3);
 snprintf(fullstr,sigfigs+2,"%LG",ldbl);
@@ -397,7 +411,7 @@ free(as_digits);
 #ifdef PREFER_CHAR_CONV
 
 char*const str=alloc(char,ndigits+2);
-snprintf(str,21,"%" PRIu64 "",u64);
+snprintf(str,MAX_U64_DIGITS+1,"%" PRIu64 "",u64);
 for(atom_t i=0;i<ndigits;i++){
 bn_tlated[i+hdrlen]=(atom_t)((unsigned)str[i]-'0');
 }
@@ -468,7 +482,7 @@ return result;
 
 
 atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len,const bool little_endian){
-if((0==strnlen_c(ldbl_digits,22))||NULL==ldbl_digits||NULL==len||NULL==int_len){
+if((0==strnlen_c(ldbl_digits,MAX_U64_DIGITS+2))||NULL==ldbl_digits||NULL==len||NULL==int_len){
 if(NULL!=len){
 *len=1;
 }
@@ -527,7 +541,7 @@ return 0;
 }
 uint64_t result=0;
 for(int16_t i=(int16_t)(len-1);i>-1;i--){
-result+=digits[i]*((uint64_t)powl(256,i));
+result+=digits[i]*((uint64_t)powl(ZENZ_BASE,i));
 }
 return result;
 }
@@ -683,7 +697,7 @@ atom_t find_frac_beginning(const char*const str){
 
 const atom_t
 pre_len=(atom_t)strcspn(str,"."),
-len=(atom_t)strnlen_c(str,30),
+len=(atom_t)strnlen_c(str,MAX_PRIMITIVE_LDBL_DIGITS),
 diff=(atom_t)(len-pre_len);
 
 if(1==diff){
@@ -702,7 +716,7 @@ return len;
 
 atom_t count_frac_digits(const char*const str){
 const atom_t begin=find_frac_beginning(str);
-if(1==strnlen_c(str,30)-begin){return 1;}
+if(1==strnlen_c(str,MAX_PRIMITIVE_LDBL_DIGITS)-begin){return 1;}
 return(atom_t)strspn(str+begin,"0123456789");
 }
 
@@ -725,16 +739,16 @@ return(atom_t)floor(log10f((float)x));
 
 atom_t get_left_nth_digit(const uint64_t x,const atom_t n){
 #ifdef PREFER_CHAR_CONV
-char*const str=alloc(char,22);
-snprintf(str,21,"%" PRIu64 "",x);
+char*const str=alloc(char,MAX_U64_DIGITS+2);
+snprintf(str,MAX_U64_DIGITS+1,"%" PRIu64 "",x);
 const char d=str[n];
 free(str);
 return(atom_t)((unsigned)d-'0');
 #else 
-const ldbl_t tpow=pow(10,indexable_digits_u64(x)-n),
+const ldbl_t tpow=pow(DEC_BASE,indexable_digits_u64(x)-n),
 ldivr=((ldbl_t)x)/tpow;
 
-return(atom_t)(((uint64_t)ldivr)%10);
+return(atom_t)(((uint64_t)ldivr)%DEC_BASE);
 #endif 
 }
 
@@ -745,7 +759,7 @@ return(atom_t)(((uint64_t)ldivr)%10);
 
 char*str_reverse(const char*const str){
 if(NULL==str){return NULL;}
-size_t len=strnlen_c(str,MAX_SIGFIGS);
+size_t len=strnlen_c(str,MAX_EXPORT_SIGFIGS);
 char*newp=NULL;
 if(len<2){
 newp=strndup_c(str,len);
@@ -765,7 +779,7 @@ return newp;
 
 
 float log256f(const float x){
-return logf(x)/logf(256);
+return logf(x)/logf(ZENZ_BASE);
 }
 
 

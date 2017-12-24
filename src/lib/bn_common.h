@@ -33,19 +33,33 @@
 #define HEADER_OFFSET     ((atom_t) 4)
 #define HEADER_OFFSET_BIG ((atom_t) 6)
 
+#define DEC_BASE    10
+#define ZENZ_BASE   256
+#define COMPARE_EPS 1e-11
+
 // maximum significant figures for conversions to hardware types
-#ifndef MAX_SIGFIGS
-  #define MAX_SIGFIGS   ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
+#ifndef MAX_EXPORT_SIGFIGS
+  #define MAX_EXPORT_SIGFIGS   ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
 #endif
 
 // and the same for big arrays
-#ifndef MAX_SIGFIGS_BIG
-  #define MAX_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
+#ifndef MAX_EXPORT_SIGFIGS_BIG
+  #define MAX_EXPORT_SIGFIGS_BIG ((UINT16_MAX * 2) - (HEADER_OFFSET_BIG * 2))
 #endif
 
 // number of kept significant figures for long doubles. probably obsolete
-#ifndef MAX_DOUBLE_KEPT_FIGS
+/*#ifndef MAX_DOUBLE_KEPT_FIGS
   #define MAX_DOUBLE_KEPT_FIGS 200
+#endif
+*/
+
+#ifndef MAX_PRIMITIVE_LDBL_DIGITS
+  #define MAX_PRIMITIVE_LDBL_DIGITS 50
+#endif
+
+// volatile const uint64_t x = 12345678901234567890UL;
+#ifndef MAX_U64_DIGITS
+  #define MAX_U64_DIGITS 20
 #endif
 
 /*
