@@ -1,3 +1,19 @@
+function os.scandir(pth, dironly)
+  local m = os.matchstart(pth .. "/*")
+  local dirs = {}
+
+  while os.matchnext(m) do
+    this = os.matchname(m)
+    if not dironly or (dironly and not os.matchisfile(m)) then
+      table.insert(dirs, this)
+    end
+  end
+
+  os.matchdone(m)
+
+  return dirs
+end
+
 workspace "yacbnl"
   configurations { "dbg", "dist" }
 
@@ -28,8 +44,6 @@ workspace "yacbnl"
     symbols "Off"
     buildoptions { "-O3" }
 
-  filter {}
-
   project "interact"
     kind "consoleapp"
 
@@ -58,10 +72,26 @@ workspace "yacbnl"
     targetdir "bin/%{cfg.buildcfg}"
     targetname "test_%{wks.name}"
 
---  project "minify"
---    kind "utility"
+  project "minify"
+    kind "utility"
 
-    -- TODO: write and port to windows
+    local new_test_file = "#include<criterion/criterion.h>\n#include\"../headers.h\"\n"
+
+    for test_file in io.popen("find ./src/test/ -type f -iregex '.*t_[a-z]*\\.c$'"):lines()
+    do
+      local new_lines = ""
+      for _, line in next, string.explode(io.readfile(test_file), "\n")
+      do
+        if not string.startswith(line, "#include")
+        then
+          new_lines = new_lines .. line .. "\n"
+        end
+      end
+      new_test_file = new_test_file .. new_lines .. "\n"
+    end
+
+    io.writefile(path.join(SOURCEDIR, "test", "_test.c"), new_test_file)
+
 
   project "clobber"
     kind "makefile"

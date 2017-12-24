@@ -1,0 +1,2 @@
+- minifier implementation in premake5.lua
+- -DPREFER_CHAR_CONV in premake5.lua

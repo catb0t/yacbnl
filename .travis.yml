@@ -6,8 +6,6 @@ install:
   - sudo apt-get install criterion
 
 script:
-  - make normal test
+  - util/premake-linux64 gmake
+  - make -j
   - bin/test_yacbnl
-  - make normal test CMD_ARGS='-DPREFER_CHAR_CONV'
-  - bin/test_yacbnl
-

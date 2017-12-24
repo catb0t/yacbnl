@@ -9,8 +9,15 @@
   ],
   "license": "GPL v3",
   "src": [
-    "yacbnl.min.h",
-    "Makefile",
+    "src/lib/addr_interp.c",
+    "src/lib/array_factory.c",
+    "src/lib/base256.c",
+    "src/lib/bignum.c",
+    "src/lib/bn_common.h",
+    "src/lib/misc_util.c",
+    "src/yacbnl.c",
+
+    "premake5.lua",
     "README.md",
     "LICENSE"
   ]
