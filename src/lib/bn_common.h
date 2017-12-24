@@ -204,6 +204,8 @@ atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t     count_frac_digits (const char* const str);
 atom_t   find_frac_beginning (const char* const str);
 
+size_t        strnlen_c (const char* const s, const size_t maxsize);
+char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
 char* make_empty_string (void);
 

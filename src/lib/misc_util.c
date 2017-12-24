@@ -96,11 +96,11 @@ atom_t get_left_nth_digit (const uint64_t x, const atom_t n) {
 char* str_reverse (const char* const str) {
   if ( NULL == str ) { return NULL; }
 
-  size_t len = strnlen(str, MAX_SIGFIGS);
+  size_t len = strnlen_c(str, MAX_SIGFIGS);
   char* newp = NULL;
 
   if ( len < 2 ) {
-    newp = strndup(str, len);
+    newp = strndup_c(str, len);
 
   } else {
     newp = alloc(char, len + 1);
@@ -249,6 +249,32 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
 atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
   (void) bn;
   return NULL;
+}
+
+char* strndup_c (const char* const s, size_t const n) {
+  const size_t len = strnlen_c(s, n);
+  char* const news = alloc(char, len + 1);
+
+  if (NULL == news) {
+    return NULL;
+  }
+
+  news[len] = '\0';
+  return memcpy(news, s, len);
+
+}
+
+size_t strnlen_c (const char* const s, const size_t maxsize) {
+  if (NULL == s) {
+      return 0;
+  }
+
+  size_t i = 0;
+  for (; i < maxsize; i++) {
+    if ('\0' == s[i]) { return i; }
+  }
+
+  return i;
 }
 
 #endif /* end of include guard: MISC_UTIL_H */

@@ -14,12 +14,11 @@ workspace "yacbnl"
 
   filter { "action:gmake*", "toolset:gcc"}
     buildoptions {
-      "-Wall", "-Wextra", "-Wfloat-equal", "-Winline", "-Wundef", "-Werror",
+      "-Wall", "-std=c11", "-Wextra", "-Wfloat-equal", "-Winline", "-Wundef", "-Werror",
       "-fverbose-asm", "-Wint-to-pointer-cast", "-Wshadow", "-Wpointer-arith",
       "-Wcast-align", "-Wcast-qual", "-Wunreachable-code", "-Wstrict-overflow=5",
       "-Wwrite-strings", "-Wconversion", "--pedantic-errors",
       "-Wredundant-decls", "-Werror=maybe-uninitialized",
-      -- "-Wbad-function-cast",
       "-Wmissing-declarations", "-Wmissing-parameter-type",
       "-Wmissing-prototypes", "-Wnested-externs", "-Wold-style-declaration",
       "-Wold-style-definition", "-Wstrict-prototypes", "-Wpointer-sign"
