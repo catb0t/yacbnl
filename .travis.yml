@@ -6,6 +6,6 @@ install:
   - sudo apt-get install criterion
 
 script:
-  - util/premake-linux64 gmake
+  - util/premake5-linux64 gmake
   - make -j
-  - bin/test_yacbnl
+  - bin/dbg/test_yacbnl
