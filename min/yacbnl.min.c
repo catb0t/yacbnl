@@ -680,18 +680,30 @@ return(atom_t)floor(log10f((float)x)+1.f);
 
 
 atom_t find_frac_beginning(const char*const str){
-const atom_t pre_len=(atom_t)strcspn(str,".");
 
+const atom_t
+pre_len=(atom_t)strcspn(str,"."),
+len=(atom_t)strnlen_c(str,30),
+diff=(atom_t)(len-pre_len);
 
-return(atom_t)(1U+(unsigned)pre_len);
+if(1==diff){
+return pre_len;
+}else if(diff){
+return(atom_t)(1+pre_len);
+}else{
+return len;
+}
 }
 
 
 
 
 
+
 atom_t count_frac_digits(const char*const str){
-return(atom_t)strspn(str+find_frac_beginning(str),"0123456789");
+const atom_t begin=find_frac_beginning(str);
+if(1==strnlen_c(str,30)-begin){return 1;}
+return(atom_t)strspn(str+begin,"0123456789");
 }
 
 

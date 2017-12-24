@@ -19,6 +19,7 @@ Test(common, idx) {
 
 Test(common, countfrac) {
   cr_assert_eq(0, count_frac_digits("1234545"));
+  cr_assert_eq(1, count_frac_digits("1234545."));
   cr_assert_eq(1, count_frac_digits("1234545.4"));
   cr_assert_eq(2, count_frac_digits("12345123.22"));
   cr_assert_eq(7, count_frac_digits("153452.2352344"));

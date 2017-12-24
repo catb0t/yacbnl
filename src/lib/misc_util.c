@@ -25,10 +25,21 @@ atom_t count_digits_u64 (const uint64_t x) {
     floating point numuber
 */
 atom_t find_frac_beginning (const char* const str) {
-  const atom_t pre_len = (atom_t) strcspn(str, ".");
-            //begin_read = (atom_t) (1U + (unsigned) pre_len);
-            /* found + 1 for separator */
-  return (atom_t) (1U + (unsigned) pre_len);
+  //begin_read = (atom_t) (1U + (unsigned) pre_len);
+  const atom_t
+    pre_len = (atom_t) strcspn(str, "."),
+    len  = (atom_t) strnlen_c(str, 30),
+    diff = (atom_t) (len - pre_len);
+    /* found + 1 for separator */
+
+  if (1 == diff) {
+    return pre_len;
+  } else if (diff) {
+    return (atom_t) (1 + pre_len);
+  } else {
+    return len;
+  }
+
 }
 
 /*
@@ -36,9 +47,13 @@ atom_t find_frac_beginning (const char* const str) {
 
   count the number of actual digits in a string representation of a floating
     point number
+
+  numbers like 123. end with an implicit zero and have a fractional length of 1
 */
 atom_t count_frac_digits (const char* const str) {
-  return (atom_t) strspn(str + find_frac_beginning(str), "0123456789");
+  const atom_t begin = find_frac_beginning(str);
+  if (1 == strnlen_c(str, 30) - begin) { return 1; }
+  return (atom_t) strspn(str + begin, "0123456789");
 }
 
 /*
