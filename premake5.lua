@@ -82,7 +82,7 @@ workspace "yacbnl"
     else
       local pth, err = os.outputof("which python2.7")
       if err > 0 then
-        print("can't minify without Python2.7 in $PATH")
+        print(string.format("can't minify without Python2.7 in $PATH (got %s)", pth))
         os.exit(1)
       end
       python_interp = pth:split(" ")[1]
@@ -117,7 +117,7 @@ workspace "yacbnl"
       print("error in minifying")
       os.exit(1)
     end
-    io.writefile(min, min_contents)
+    io.writefile(min, min_contents .. "\n")
 
   project "clobber"
     kind "makefile"
