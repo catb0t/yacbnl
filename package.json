@@ -10,6 +10,7 @@
   "license": "GPL v3",
   "src": [
     "min/yacbnl.min.c",
+    "min/yacbnl.min.h",
     "README.md",
     "LICENSE"
   ]

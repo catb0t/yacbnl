@@ -74,6 +74,8 @@ workspace "yacbnl"
   project "minify"
     kind "utility"
 
+    local min_exe = path.join("util", "minify.py")
+
     -- find python27
 
     local python_interp = ""
@@ -115,13 +117,24 @@ workspace "yacbnl"
 
     -- minify
     local min = path.join("min", "yacbnl.min.c")
-    local cmd = string.format("%s %s %s", python_interp, path.join("util", "minify.py"), unmin)
+    local cmd = string.format("%s %s %s", python_interp, min_exe, unmin)
     local min_contents, err = os.outputof(cmd)
     if err > 0 then
       print("error in minifying")
       os.exit(1)
     end
     io.writefile(min, copyleft .. min_contents .. "\n")
+
+    -- minify .h
+    local header = path.join("src", "lib", "bn_common.h")
+    local header_out = path.join("min", "yacbnl.min.h")
+    local out_cmd = string.format("%s %s %s", python_interp, min_exe, header)
+    local header_min, herr = os.outputof(out_cmd)
+    if herr > 0 then
+      print("error in minifying")
+      os.exit(1)
+    end
+    io.writefile(header_out, copyleft .. "#ifndef YACBNL_H\n#define YACBNL_H\n" .. header_min .. "\n#endif\n")
 
   project "clobber"
     kind "makefile"
