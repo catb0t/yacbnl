@@ -91,7 +91,7 @@ workspace "yacbnl"
     local copyleft = io.readfile(".copyleft_notice")
 
     -- contains includes we don't want to filter out
-    local all_contents = io.readfile(path.join("src", "lib", "bn_common.h"))
+    local all_contents = "#ifndef YACBNL\n#define YACBNL\n" .. io.readfile(path.join("src", "lib", "bn_common.h"))
 
     -- c files all have exactly one include
     for _, file in next, os.matchfiles(path.join("src", "lib", "*.c")) do
@@ -106,6 +106,8 @@ workspace "yacbnl"
 
       all_contents = all_contents .. "\n" .. final .. "\n"
     end
+
+    all_contents = all_contents .. "#endif\n"
 
     -- write out full unminified contents
     local unmin = path.join("min", "yacbnl.full.c")

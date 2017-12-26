@@ -1,3 +1,5 @@
+#ifndef YACBNL
+#define YACBNL
 /*
   YACBNL Yet Another C BigNum Library
   Copyright (C) 2017 Cat Stevens
@@ -898,3 +900,4 @@ size_t strnlen_c (const char* const s, const size_t maxsize) {
 }
 #endif /* end of include guard: MISC_UTIL_H */
 
+#endif
