@@ -77,7 +77,7 @@ workspace "yacbnl"
     -- find python27
 
     local python_interp = ""
-    if "windows" == os.target then
+    if "windows" == os.target() then
       python_interp = path.join("C:", "Python27", "python.exe")
     else
       local pth, err = os.outputof("which python2.7")
@@ -87,6 +87,8 @@ workspace "yacbnl"
       end
       python_interp = pth:split(" ")[1]
     end
+
+    local copyleft = io.readfile(".copyleft_notice")
 
     -- contains includes we don't want to filter out
     local all_contents = io.readfile(path.join("src", "lib", "bn_common.h"))
@@ -117,7 +119,7 @@ workspace "yacbnl"
       print("error in minifying")
       os.exit(1)
     end
-    io.writefile(min, min_contents .. "\n")
+    io.writefile(min, copyleft .. min_contents .. "\n")
 
   project "clobber"
     kind "makefile"
