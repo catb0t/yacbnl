@@ -1,10 +1,3 @@
-function string:split (sep)
-    local sep, fields = sep or ":", {}
-    local pattern = string.format("([^%s]+)", sep)
-    self:gsub(pattern, function(c) fields[#fields+1] = c end)
-    return fields
-end
-
 workspace "yacbnl"
   configurations { "dbg", "dist" }
 
@@ -87,7 +80,7 @@ workspace "yacbnl"
         print(string.format("can't minify without Python2.7 in $PATH (got %s)", pth))
         os.exit(1)
       end
-      python_interp = pth:split(" ")[1]
+      python_interp = string.explode(pth, " ")[1]
     end
 
     local copyleft = io.readfile(".copyleft_notice")
