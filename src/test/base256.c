@@ -14,7 +14,7 @@ Test(b256_util, count) {
 Test(b256_to_10, u64) {
   static const atom_t d[] = {255, 255};
 
-  const uint64_t f = b256_to_u64_digits(d, 2);
+  const uint64_t f = b256_to_u64(d, 2);
 
   //printf("%" PRIu64 "\n", f);
 
@@ -24,9 +24,7 @@ Test(b256_to_10, u64) {
 Test(b256_to_10, ldbl) {
   static const atom_t d[] = {255, 255};
 
-  uint16_t il;
-
-  const char* const f = b256_to_ldbl_digits(d, 2, 2, &il);
+  const char* const f = b256_to_ldbl_digits(d, 1, 1);
 
   //printf("%s\n", f);
 

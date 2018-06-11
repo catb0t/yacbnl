@@ -18,6 +18,22 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+  atom_t: an unsigned one-byte number "atom" element 0-FF
+  bn: big number, usually a struct type or array repr
+  bna: big number array; any array of atom_t
+  b10 / b256: base 10, base 256
+  zenz: base 256-related
+  1b / 2b: one-byte and two-byte number interpretation
+  u16: a 16 bit integer type
+  u64: pertaining to a 64 bit integer type or non-float string representation
+  ldbl: long double; a decimal representation
+  frac / flot: decimal sub-1 part of a number (right of decimal separator in ltr)
+  int: integral part of a number (left of decimal separator in ltr)
+  samb: single address multi byte (like SMID)
+  digits: refers usually to a base 10 string represenation of a hardware number
+*/
+
 #ifndef BN_COMMON_H
 #define BN_COMMON_H
 
@@ -37,7 +53,8 @@
 
 #define DEC_BASE    10
 #define ZENZ_BASE   256
-#define COMPARE_EPS 1e-11
+#define COMPARE_EPS 1e-11 // (default) epsilon for fp comparisons
+#define CHAR_DIGIT_DIFF ((char) 48) // difference between character #0 and the character '0'
 
 // maximum significant figures for conversions to hardware types
 #ifndef MAX_EXPORT_SIGFIGS
@@ -56,12 +73,21 @@
 */
 
 #ifndef MAX_PRIMITIVE_LDBL_DIGITS
-  #define MAX_PRIMITIVE_LDBL_DIGITS 50
+  #define MAX_PRIMITIVE_LDBL_DIGITS 50 // can be higher maybe
 #endif
 
 // volatile const uint64_t x = 12345678901234567890UL;
 #ifndef MAX_U64_DIGITS
   #define MAX_U64_DIGITS 20
+#endif
+
+/* only a fallback for strn* functions in the rare case no null terminator is found */
+#ifndef MAX_STR_LDBL_DIGITS
+  #define MAX_STR_LDBL_DIGITS 10000
+#endif
+
+#ifndef DECIMAL_SEPARATOR_STR
+  #define DECIMAL_SEPARATOR_STR "."
 #endif
 
 /*
@@ -197,6 +223,14 @@ typedef struct st_bignum_t {
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
+#ifndef set_out_param
+  #define set_out_param(name, value) do { if ( NULL != (name) ){ *name = value; } } while(0)
+#endif
+
+#ifndef string_isempty
+  #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
+#endif
+
 /* individual values */
 typedef enum {
   BN_NONE = 0,
@@ -223,6 +257,7 @@ atom_t   find_frac_beginning (const char* const str);
 size_t        strnlen_c (const char* const s, const size_t maxsize);
 char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
+size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
 
 uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
@@ -247,11 +282,23 @@ void        samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const
 uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
+/* these are raw atom_t arrays, not bignum structures */
+
+/* base 10 conversions */
+char*   b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*    b10_to_u64_digits (const atom_t* const digits, const uint16_t len);
+uint64_t        b10_to_u64 (const atom_t* const digits, const uint16_t len);
+atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
+atom_t*         u64_to_b10 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*  u64_digits_to_b10 (const char* const digits, uint16_t* const len, const bool little_endian);
+
 /* base 256 conversions */
-char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
-uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*     b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+uint64_t         b256_to_u64 (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
-atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian);
 
 #endif /* end of include guard: BN_COMMON_H */
 
@@ -325,7 +372,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV
     // naive string ops
-    nint_digits  = (atom_t) strcspn(fullstr, "."),
+    nint_digits  = (atom_t) strcspn(fullstr, DECIMAL_SEPARATOR_STR),
 #else /* ! PREFER_CHAR_CONV */
     // O(1) maths
     nint_digits  = count_digits_u64( (uint64_t) floorl(ldbl) ),
@@ -405,7 +452,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
     /* convert to array representation */
     uint16_t len;
     /* little endian*/
-    atom_t* as_digits = u64_digits_to_b256(u64, &len, true);
+    atom_t* as_digits = u64_to_b256(u64, &len, true);
     /* just copy the data into the rest of the array */
     memcpy(bn_tlated + hdrlen, as_digits, len);
     free(as_digits);
@@ -433,42 +480,60 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
 #ifndef BASE256_H
 #define BASE256_H
+static uint16_t count_b256_digits_b10 (const char* const digits) {
+  (void) digits;
+  return 0;
+}
 /*
-  uint64_t, uint16_t*, bool -> atom_t*
-  transform a uint64_t to its base 256 representation
+  char*, uint16_t*, bool -> atom_t*
+  transform a uint64_t (string) to its base 256 representation in bytes
   the value at len is changed to the new length of the representation
   if little_endian is true, then the result is reversed
-  if value was 0 or len was NULL, then a valid pointer to an array of value 0
-    is returned
-  if len was NULL, it is not changed into a valid pointer
-  the return value is always a valid pointer
+  a valid pointer to a zero array is returned if
+    len is NULL
+    the input string is empty or NULL
+  in the last case, len is set to 1 (when a valid pointer)
 */
-atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
-  if (! value || NULL == len) {
-    if (NULL != len) {
-      *len = 1;
-    }
+atom_t* u64_digits_to_b256 (const char* const u64_str, uint16_t* const len, const bool little_endian) {
+  if (string_is_sempty(u64_str, MAX_STR_LDBL_DIGITS) || NULL == len) {
+    set_out_param(len, 1);
     return zalloc(atom_t, 1);
   }
-  atom_t* const result = zalloc(atom_t, count_b256_digits_u64(value));
-  uint16_t i = 0;
+  atom_t* const result = zalloc(atom_t, count_b256_digits_b10(u64_str));
+  atom_t* const as_b10 = u64_digits_to_b10(u64_str, len, false);
+  (void) little_endian;
+  (void) as_b10;
   /* big endian! */
-  for (uint64_t tempr = value; tempr; i++) {
-    //result = realloc(result, i + 1);
-    result[i] = (atom_t)   (tempr % B256_HIGH);
-    tempr     = (uint64_t) floorl(tempr / B256_HIGH);
-    //printf("%d, %" PRIu64 "\n", result[i], tempr);
-    if (! tempr) { break; }
-  }
-  *len = (uint16_t) (i + 1);
-  if (little_endian) {
-    atom_t* const reversed = array_reverse(result, *len);
-    free(result);
-    return reversed;
-  } else {
-    return result;
-  }
+  /*
+    for (uint64_t tempr = value; tempr; i++) {
+      //result = realloc(result, i + 1);
+      result[i] = (atom_t)   (tempr % B256_HIGH);
+      tempr     = (uint64_t) floorl(tempr / B256_HIGH);
+      //printf("%d, %" PRIu64 "\n", result[i], tempr);
+      if (! tempr) { break; }
+    }
+  */
+  return result;
 }
+/*
+  char* -> atom_t*
+*/
+static atom_t* str_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian) {
+  (void) digits;
+  (void) len;
+  (void) little_endian;
+  return NULL;
+}
+/*
+{
+  const char* const rev_digits = str_reverse(digits);
+  size_t b256_place = 1, b10_place = 1; // 1-index
+  atom_t* const b256_digits = alloc(atom_t, 10);
+  for (size_t i = 0; rev_digits[i]; i++) {
+  }
+  return b256_digits;
+}
+*/
 /*
   char*, uint16_t*, uint16_t* -> atom_t*
   transform a long double to its base 256 representation
@@ -484,38 +549,23 @@ atom_t* u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const boo
   the return value is always a valid pointer
 */
 atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
-  if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
-    if (NULL != len) {
-      *len = 1;
-    }
-    if (NULL != int_len) {
-      *int_len = 1;
-    }
+  if ( string_is_sempty(ldbl_digits, MAX_STR_LDBL_DIGITS) || NULL == len || NULL == int_len) {
+    set_out_param(len, 1);
+    set_out_param(len, 1);
     return zalloc(atom_t, 1);
   }
-  /* integer part before the decimal point */
-  const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, ".");
+  /* length of integer part before the decimal point */
+  const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, DECIMAL_SEPARATOR_STR);
   /* get the two parts of the number */
   char* const int_part  = strndup_c(ldbl_digits, pre_dec), // 1
       /* flip the significant digits */
       * const flot_part = str_reverse(ldbl_digits + pre_dec + /* skip separator */ 1); // 2
-  /*
-    convert the strings to numbers
-    the error part is NULL
-  */
-  const uint64_t lhs = strtoull(int_part,  NULL, B10_HIGH),
-                 rhs = strtoull(flot_part, NULL, B10_HIGH);
-  if (EINVAL == errno || ERANGE == errno) {
-    free(int_part), free(flot_part); // ~1, ~2
-    return zalloc(atom_t, 1);
-  }
-  free(int_part), free(flot_part); // ~1, ~2
   uint16_t lhs_len, rhs_len;
-  atom_t* const lhs_b256 = u64_digits_to_b256(lhs, &lhs_len, true),
+  atom_t* const lhs_b256 = str_digits_to_b256(int_part, &lhs_len, true),
         /* note argument #3: flip the fractional digits again */
-        * const rhs_b256 = u64_digits_to_b256(rhs, &rhs_len, false);
-  *len     = (uint16_t) (lhs_len + rhs_len);
-  *int_len = lhs_len;
+        * const rhs_b256 = str_digits_to_b256(flot_part, &rhs_len, false);
+  set_out_param(len, (uint16_t) (lhs_len + rhs_len) );
+  set_out_param(int_len, lhs_len);
   atom_t* const final_concat = array_concat(lhs_b256, rhs_b256, lhs_len, rhs_len);
   free(lhs_b256), free(rhs_b256);
   if (little_endian) {
@@ -528,59 +578,92 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
 }
 /*
     vvv little endian vvv
-  the following functions expect and return data with the least significant part
+  the following functions ONLY expect and return data with the least significant part
     at the end, rather than at the beginning
-  this is inline with how numbers are usually written in both base 10 and base 2
+  this is in line with how numbers are usually written in both base 10 and base 2
 */
 /*
   atom_t*, uint16_t -> uint64_t
   get the base 10 value out of a base 256 representation
-  if len is 0, 0 is returned
+  this function clears errno on entry, but not on exit
+  0 is returned when
+    digits represents the value 0
+    len is 0 or greater than MAX_U64_DIGITS (usually 20)
+    the value represented in digits is larger than UINT64_MAX
+  in the last two cases, errno is set to ERANGE
 */
-uint64_t b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
-  if (! len) {
+uint64_t b256_to_u64 (const atom_t* const digits, const uint16_t len) {
+  if (! digits || ! len ) {
     return 0;
   }
+  if (len > MAX_U64_DIGITS) { goto range_err; }
+  errno = 0;
   uint64_t result = 0;
   for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
     result += digits[i] * ( (uint64_t) powl(ZENZ_BASE, i) );
+    if (ERANGE == errno) { goto range_err; }
   }
   return result;
+  range_err:
+    errno = ERANGE;
+    return 0;
+}
+char* b256_to_u64_digits (const atom_t* const digits, const uint16_t len) {
+  (void) digits;
+  (void) len;
+  return NULL;
 }
 /*
   atom_t*, uint16_t, uint16_t, uint16_t* -> char*
-  get the base 10 value of a base 256 representation of a long double
-  if atom_t* has no len, then an empty string is returned, not "0"
+  convert base 256 representation of a long double to base 10 string
+  an empty string is returned when
+    len is 0
+    int_len is greater than len
+    out_int_len is not writable (i.e. NULL)
+    digits is NULL
 */
-char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len) {
-  if (NULL == digits || ! len || NULL == out_int_len) {
+char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len) {
+  /* prologue: check arguments */
+  /* 0 is a valid int_len */
+  if (NULL == digits || ! len || int_len > len) {
     return make_empty_string();
   }
-  /* the length of the fractional part is gotten from subtraction */
-  const uint16_t flot_len = (uint16_t) (len - int_len);
-  /* copy the value's parts */
-  atom_t * const int_part  = memcpy( alloc(atom_t, int_len),  digits,           sz(atom_t, int_len)), // 1
-         * const flot_part = memcpy( alloc(atom_t, flot_len), digits + int_len, sz(atom_t, flot_len)); // 2
-  /* grab the base 10 values from the copied parts */
-  const uint64_t int_val  = b256_to_u64_digits(int_part, int_len),
-                 flot_val = b256_to_u64_digits(flot_part, flot_len);
-  free(int_part), free(flot_part); // ~1, ~2
-  /* get the nunmber of digits required to make a string */
-  const uint16_t int_len10  = count_digits_u64(int_val),
-                 flot_len10 = count_digits_u64(flot_val);
-  /* fractional part and final storage */
-  char * const flot_str = alloc(atom_t, flot_len10),
-       * const finalval = alloc(atom_t, int_len10 + flot_len10 + 1);
-  /* just do the fractional part */
-  snprintf(flot_str, (uint16_t) (flot_len10 + 1), "%" PRIu64 "", flot_val);
-  /* big-endian version of the fractional part */
-  char* const flot_str_be = str_reverse(flot_str);
-  free(flot_str);
-  /* combine the flipped fractional part with the integral part */
-  snprintf(finalval, (uint16_t) (int_len10 + flot_len10 + /* null + sep */ 2), "%" PRIu64 ".%s", int_val, flot_str_be);
-  /* record the integer length */
-  *out_int_len = count_digits_u64(int_val);
-  return finalval;
+  /* step 1: base 256 -> base 10 parts */
+  /* copy value to a better name */
+  const uint16_t int_len_orig = int_len;
+  /* the length of the fractional part is from subtraction */
+  const uint16_t flot_len_orig = (uint16_t) (len - int_len_orig);
+  /* copy the parts (in base 256) from the original (1 2) */
+  atom_t *const int_b256  = memcpy( alloc(atom_t, int_len_orig), digits, sz(atom_t, int_len_orig)),
+  /* the flot part needs to be reversed so that it is little endian (descending places from left to right) */
+         *const flot_b256 = array_reverse(digits + int_len_orig, flot_len_orig); // big endian -> le
+  /* step 2: base 10 parts -> strings */
+  /* convert / reverse the parts (3 4 5) */
+  char *const int_b10     = b256_to_u64_digits(int_b256, int_len_orig),
+  /* this conversion will be wrong if the flot part is left big endian */
+       *const flot_b10    = b256_to_u64_digits(flot_b256, flot_len_orig), // le -> le
+  /* re-reverse the flot part so that it is in the proper order */
+       *const flot_b10_be = str_reverse(flot_b10); // le -> be
+  /* don't need the base256 parts anymore (~1 ~2 ~4) */
+  free(int_b10), free(flot_b256), free(flot_b10);
+  /* step 3: strings -> string + sep + string */
+  const uint16_t int_len_b10 = (uint16_t) strnlen_c(int_b10, MAX_STR_LDBL_DIGITS),
+                flot_len_b10 = (uint16_t) strnlen_c(flot_b10_be, MAX_STR_LDBL_DIGITS);
+  // 6
+  char* const out_str = alloc(char, 2 + int_len_b10 + flot_len_b10);
+  snprintf(out_str, 1U + int_len_b10 + flot_len_b10, "%s.%s", int_b10, flot_b10_be);
+  // ~3 ~5
+  free(int_b10), free(flot_b10_be);
+  /* epilogue: finish */
+  // 6 leaves scope
+  return out_str;
+}
+atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
+  char* const val_str = alloc(char, count_digits_u64(value));
+  snprintf(val_str, MAX_U64_DIGITS, "%" PRIu64 "", value);
+  atom_t* const result = u64_digits_to_b256(val_str, len, little_endian);
+  free(val_str);
+  return result;
 }
 #endif /* end of include guard: BASE256_H */
 
@@ -698,7 +781,7 @@ atom_t count_digits_u64 (const uint64_t x) {
 atom_t find_frac_beginning (const char* const str) {
   //begin_read = (atom_t) (1U + (unsigned) pre_len);
   const atom_t
-    pre_len = (atom_t) strcspn(str, "."),
+    pre_len = (atom_t) strcspn(str, DECIMAL_SEPARATOR_STR),
     len  = (atom_t) strnlen_c(str, MAX_PRIMITIVE_LDBL_DIGITS),
     diff = (atom_t) (len - pre_len);
     /* found + 1 for separator */
@@ -898,6 +981,117 @@ size_t strnlen_c (const char* const s, const size_t maxsize) {
   }
   return i;
 }
+size_t str_count (const char* const str, const char find) {
+  size_t ocur = 0;
+  const size_t len = strnlen_c(str, MAX_STR_LDBL_DIGITS);
+  for (size_t i = 0; i < len; i++) {
+    if (find == str[i]) { ++ocur; }
+  }
+  return ocur;
+}
 #endif /* end of include guard: MISC_UTIL_H */
+
+
+#ifndef BASE10_H
+#define BASE10_H
+/*
+  atom_t*, uint16_t, uint16_t -> char*
+  convert a base 10 array into a string base 10 floating point number
+  very simple operation from { 1 2 3 4 5 } with int_len = 3 -> "123.45"
+  an empty string is returned when
+    len is 0
+    int_len is greater than len
+*/
+char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len) {
+  if (NULL == digits || ! len || int_len > len) { return make_empty_string(); }
+  uint8_t* const int_part = alloc(uint8_t, len);
+  for (size_t i = 0; i < int_len; i++) {
+    int_part[i] = (uint8_t) (unsigned)((uint8_t) (unsigned) digits[i]) + CHAR_DIGIT_DIFF;
+  }
+  const size_t flot_len = len - int_len;
+  char* const flot_part = alloc(char, flot_len);
+  for (size_t i = 0; i < flot_len; i++) {
+    flot_part[i] = (char) digits[i] + CHAR_DIGIT_DIFF;
+  }
+  const bool dot = len != int_len;
+  char* const final_concat = alloc(char, int_len + dot + flot_len);
+  snprintf(final_concat, MAX_STR_LDBL_DIGITS, "%s%s%s", int_part, (dot ? DECIMAL_SEPARATOR_STR : ""), flot_part);
+  free(int_part), free(flot_part);
+  return final_concat;
+}
+char* b10_to_u64_digits (const atom_t* const digits, const uint16_t len) {
+  char* const u64_str = alloc(char, len + 1);
+  for (uint16_t i = 0; i < len; i++) {
+    u64_str[i] = (char) (digits[i] + CHAR_DIGIT_DIFF);
+  }
+  u64_str[len] = '\0';
+  return u64_str;
+}
+uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
+  char* const u64_str = b10_to_u64_digits(digits, len);
+  const uint64_t final = strtoull(u64_str, NULL, DEC_BASE);
+  free(u64_str);
+  return final;
+}
+// string 123.45 to { 1 2 3 4 5 ... }
+atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* const len, /* out */ uint16_t* const int_len, const bool little_endian) {
+  if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
+    set_out_param(len, 1);
+    set_out_param(int_len, 1);
+    return zalloc(atom_t, 1);
+  }
+  /* length of integer part before the decimal point */
+  const uint16_t pre_dec = (uint16_t) strcspn(ldbl_digits, DECIMAL_SEPARATOR_STR),
+              digits_len = (uint16_t) strnlen_c(ldbl_digits, MAX_STR_LDBL_DIGITS);
+  char *const int_part  = strndup_c(ldbl_digits, pre_dec), // 1
+       *const flot_part = strndup_c(ldbl_digits + pre_dec + 1, MAX_STR_LDBL_DIGITS);
+  uint16_t i = 0;
+  for (; int_part[i]; i++) {
+    int_part[i]  = int_part[i] - CHAR_DIGIT_DIFF;
+  }
+  const uint16_t int_part_len = i;
+  for (i = 0; flot_part[i]; i++) {
+    flot_part[i]  = flot_part[i] - CHAR_DIGIT_DIFF;
+  }
+  const uint16_t flot_part_len = i;
+  set_out_param(len, int_part_len + flot_part_len);
+  set_out_param(int_len, int_part_len);
+  atom_t* const res = alloc(atom_t, digits_len);
+  memcpy(res, int_part, int_part_len);
+  memcpy(res + int_part_len + 1, flot_part, flot_part_len);
+  free(int_part), free(flot_part);
+  if (little_endian) {
+    atom_t* const res_rev = array_reverse(res, int_part_len + flot_part_len);
+    free(res);
+    return res_rev;
+  }
+  return res;
+}
+atom_t* u64_to_b10 (const uint64_t value, /* out */ uint16_t* const len, const bool little_endian) {
+  char* const str_digits = alloc(char, MAX_U64_DIGITS + 1);
+  snprintf(str_digits, MAX_U64_DIGITS, "%" PRIu64, value);
+  atom_t* const bytes = u64_digits_to_b10(str_digits, len, little_endian);
+  free(str_digits);
+  return bytes;
+}
+// string like 23948734 to atom_t array { 2 3 9 ... }
+atom_t* u64_digits_to_b10 (const char* const digits, /* out */ uint16_t* const len, const bool little_endian) {
+  const size_t digits_len = strnlen_c(digits, MAX_STR_LDBL_DIGITS);
+  if (NULL == digits || 0 == digits_len || NULL == len) {
+    return NULL;
+  }
+  set_out_param(len, (uint16_t) digits_len);
+  atom_t* const as_b10 = alloc(atom_t, digits_len);
+  for (uint16_t i = 0; i < digits_len; i++) {
+    as_b10[i] = (atom_t) digits[i] - CHAR_DIGIT_DIFF;
+  }
+  if (little_endian) {
+    atom_t* const rev_digits = array_reverse(as_b10, (uint16_t) digits_len);
+    free(as_b10);
+    return rev_digits;
+  }
+  return as_b10;
+}
+#endif
 
 #endif

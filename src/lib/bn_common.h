@@ -16,6 +16,22 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+  atom_t: an unsigned one-byte number "atom" element 0-FF
+  bn: big number, usually a struct type or array repr
+  bna: big number array; any array of atom_t
+  b10 / b256: base 10, base 256
+  zenz: base 256-related
+  1b / 2b: one-byte and two-byte number interpretation
+  u16: a 16 bit integer type
+  u64: pertaining to a 64 bit integer type or non-float string representation
+  ldbl: long double; a decimal representation
+  frac / flot: decimal sub-1 part of a number (right of decimal separator in ltr)
+  int: integral part of a number (left of decimal separator in ltr)
+  samb: single address multi byte (like SMID)
+  digits: refers usually to a base 10 string represenation of a hardware number
+*/
+
 #ifndef BN_COMMON_H
 #define BN_COMMON_H
 
@@ -35,7 +51,8 @@
 
 #define DEC_BASE    10
 #define ZENZ_BASE   256
-#define COMPARE_EPS 1e-11
+#define COMPARE_EPS 1e-11 // (default) epsilon for fp comparisons
+#define CHAR_DIGIT_DIFF ((uint8_t) 48) // difference between character #0 and the character '0'
 
 // maximum significant figures for conversions to hardware types
 #ifndef MAX_EXPORT_SIGFIGS
@@ -54,12 +71,21 @@
 */
 
 #ifndef MAX_PRIMITIVE_LDBL_DIGITS
-  #define MAX_PRIMITIVE_LDBL_DIGITS 50
+  #define MAX_PRIMITIVE_LDBL_DIGITS 50 // can be higher maybe
 #endif
 
 // volatile const uint64_t x = 12345678901234567890UL;
 #ifndef MAX_U64_DIGITS
   #define MAX_U64_DIGITS 20
+#endif
+
+/* only a fallback for strn* functions in the rare case no null terminator is found */
+#ifndef MAX_STR_LDBL_DIGITS
+  #define MAX_STR_LDBL_DIGITS 10000
+#endif
+
+#ifndef DECIMAL_SEPARATOR_STR
+  #define DECIMAL_SEPARATOR_STR "."
 #endif
 
 /*
@@ -195,6 +221,14 @@ typedef struct st_bignum_t {
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
+#ifndef set_out_param
+  #define set_out_param(name, value) do { if ( NULL != (name) ){ *name = value; } } while(0)
+#endif
+
+#ifndef string_isempty
+  #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
+#endif
+
 /* individual values */
 typedef enum {
   BN_NONE = 0,
@@ -221,6 +255,7 @@ atom_t   find_frac_beginning (const char* const str);
 size_t        strnlen_c (const char* const s, const size_t maxsize);
 char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
+size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
 
 uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
@@ -245,10 +280,22 @@ void        samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const
 uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
+/* these are raw atom_t arrays, not bignum structures */
+
+/* base 10 conversions */
+char*   b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*    b10_to_u64_digits (const atom_t* const digits, const uint16_t len);
+uint64_t        b10_to_u64 (const atom_t* const digits, const uint16_t len);
+atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
+atom_t*         u64_to_b10 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*  u64_digits_to_b10 (const char* const digits, uint16_t* const len, const bool little_endian);
+
 /* base 256 conversions */
-char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len, uint16_t* const out_int_len);
-uint64_t  b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*     b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
+uint64_t         b256_to_u64 (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
-atom_t*   u64_digits_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
+atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian);
 
 #endif /* end of include guard: BN_COMMON_H */

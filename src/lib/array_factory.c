@@ -99,7 +99,7 @@ static atom_t* impl_to_digit_array_ldbl (const ldbl_t ldbl, const atom_t metadat
     // already in fullstr form but the question is, which has lower time complexity
 #ifdef PREFER_CHAR_CONV
     // naive string ops
-    nint_digits  = (atom_t) strcspn(fullstr, "."),
+    nint_digits  = (atom_t) strcspn(fullstr, DECIMAL_SEPARATOR_STR),
 #else /* ! PREFER_CHAR_CONV */
     // O(1) maths
     nint_digits  = count_digits_u64( (uint64_t) floorl(ldbl) ),
@@ -198,7 +198,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
     /* convert to array representation */
     uint16_t len;
     /* little endian*/
-    atom_t* as_digits = u64_digits_to_b256(u64, &len, true);
+    atom_t* as_digits = u64_to_b256(u64, &len, true);
 
     /* just copy the data into the rest of the array */
     memcpy(bn_tlated + hdrlen, as_digits, len);

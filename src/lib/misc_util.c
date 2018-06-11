@@ -27,7 +27,7 @@ atom_t count_digits_u64 (const uint64_t x) {
 atom_t find_frac_beginning (const char* const str) {
   //begin_read = (atom_t) (1U + (unsigned) pre_len);
   const atom_t
-    pre_len = (atom_t) strcspn(str, "."),
+    pre_len = (atom_t) strcspn(str, DECIMAL_SEPARATOR_STR),
     len  = (atom_t) strnlen_c(str, MAX_PRIMITIVE_LDBL_DIGITS),
     diff = (atom_t) (len - pre_len);
     /* found + 1 for separator */
@@ -290,6 +290,15 @@ size_t strnlen_c (const char* const s, const size_t maxsize) {
   }
 
   return i;
+}
+
+size_t str_count (const char* const str, const char find) {
+  size_t ocur = 0;
+  const size_t len = strnlen_c(str, MAX_STR_LDBL_DIGITS);
+  for (size_t i = 0; i < len; i++) {
+    if (find == str[i]) { ++ocur; }
+  }
+  return ocur;
 }
 
 #endif /* end of include guard: MISC_UTIL_H */

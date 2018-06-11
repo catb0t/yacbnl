@@ -18,7 +18,7 @@
 
 #ifndef YACBNL_H
 #define YACBNL_H
-                 
+                                 
  #ifndef BN_COMMON_H
  #define BN_COMMON_H
  
@@ -37,7 +37,8 @@
  
  #define DEC_BASE 10
  #define ZENZ_BASE 256
- #define COMPARE_EPS 1e-11
+ #define COMPARE_EPS 1e-11 
+ #define CHAR_DIGIT_DIFF ((char) 48) 
   
  #ifndef MAX_EXPORT_SIGFIGS
  #define MAX_EXPORT_SIGFIGS ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
@@ -49,11 +50,19 @@
    
     
  #ifndef MAX_PRIMITIVE_LDBL_DIGITS
- #define MAX_PRIMITIVE_LDBL_DIGITS 50
+ #define MAX_PRIMITIVE_LDBL_DIGITS 50 
  #endif
   
  #ifndef MAX_U64_DIGITS
  #define MAX_U64_DIGITS 20
+ #endif
+  
+ #ifndef MAX_STR_LDBL_DIGITS
+ #define MAX_STR_LDBL_DIGITS 10000
+ #endif
+ 
+ #ifndef DECIMAL_SEPARATOR_STR
+ #define DECIMAL_SEPARATOR_STR "."
  #endif
      
  #ifdef PREFER_CHAR_CONV
@@ -113,7 +122,15 @@
  #define zalloc(type, size) calloc(( (size_t) size), sizeof (type))
  #define macrogetval(x) #x
  #define stringify(x) macrogetval(x)
-   typedef enum{ BN_NONE=0,  BN_SIGN=FL_SIGN, BN_SNAN=FL_SIGN|FL_NAN, BN_SINF=FL_SIGN|FL_INF,  BN_NAN=FL_NAN, BN_INF=FL_INF  }bignum_flag_t;   float log256f(const float x); bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps); atom_t count_digits_u64(const uint64_t x); atom_t indexable_digits_u64(const uint64_t x); atom_t count_b256_digits_u64(const uint64_t x); atom_t get_left_nth_digit(const uint64_t x,const atom_t n); atom_t count_frac_digits(const char*const str); atom_t find_frac_beginning(const char*const str);  size_t strnlen_c(const char*const s,const size_t maxsize); char*strndup_c(const char*const s,size_t const n); char*str_reverse(const char*const str); char*make_empty_string(void);  uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const uint16_t accept_num,const atom_t accept_only,...); uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const uint16_t reject_num,const atom_t reject_only,...);  atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len); atom_t*array_reverse(const atom_t*const arr,const uint16_t len); atom_t*array_trim_trailing_zeroes(const atom_t*const bn); atom_t*array_trim_leading_zeroes(const atom_t*const bn);    bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals); bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);   atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags); atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);   void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al); uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al); uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]);   char*b256_to_ldbl_digits(const atom_t*const digits,const uint16_t len,const uint16_t int_len,uint16_t*const out_int_len); uint64_t b256_to_u64_digits(const atom_t*const digits,const uint16_t len); atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len,const bool little_endian); atom_t*u64_digits_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian); 
+ 
+ #ifndef set_out_param
+ #define set_out_param(name, value) do { if ( NULL != (name) ){ *name = value; } } while(0)
+ #endif
+ 
+ #ifndef string_isempty
+ #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
+ #endif
+   typedef enum{ BN_NONE=0,  BN_SIGN=FL_SIGN, BN_SNAN=FL_SIGN|FL_NAN, BN_SINF=FL_SIGN|FL_INF,  BN_NAN=FL_NAN, BN_INF=FL_INF  }bignum_flag_t;   float log256f(const float x); bool compare_eps(const ldbl_t a,const ldbl_t b,const ldbl_t eps); atom_t count_digits_u64(const uint64_t x); atom_t indexable_digits_u64(const uint64_t x); atom_t count_b256_digits_u64(const uint64_t x); atom_t get_left_nth_digit(const uint64_t x,const atom_t n); atom_t count_frac_digits(const char*const str); atom_t find_frac_beginning(const char*const str);  size_t strnlen_c(const char*const s,const size_t maxsize); char*strndup_c(const char*const s,size_t const n); char*str_reverse(const char*const str); size_t str_count(const char*const str,const char find); char*make_empty_string(void);  uint16_t array_spn(const atom_t*arr,const uint16_t arr_len,const uint16_t accept_num,const atom_t accept_only,...); uint16_t array_cspn(const atom_t*arr,const uint16_t arr_len,const uint16_t reject_num,const atom_t reject_only,...);  atom_t*array_concat(const atom_t*const a,const atom_t*const b,const uint16_t a_len,const uint16_t b_len); atom_t*array_reverse(const atom_t*const arr,const uint16_t len); atom_t*array_trim_trailing_zeroes(const atom_t*const bn); atom_t*array_trim_leading_zeroes(const atom_t*const bn);    bignum_t*bignum_ctor(const ldbl_t ldbl,const uint64_t u64,const atom_t flags,const bignum_t*const*const opt_vals); bignum_t*bignum_copy(const bignum_t*const bn,const bool no_recurse_optionals);   atom_t*make_array_header(const atom_t metadata,const uint16_t int_digits,const uint16_t flot_digits,const atom_t flags); atom_t*to_digit_array(const ldbl_t ldbl_in,const uint64_t u64,const atom_t value_flags,const atom_t metadata);   void samb_u16_to_twoba(const uint16_t n,atom_t*const ah,atom_t*const al); uint16_t samb_twoba_to_u16(const atom_t ah,const atom_t al); uint16_t samb_twoarray_to_u16(const atom_t arr[static 2]);     char*b10_to_ldbl_digits(const atom_t*const digits,const uint16_t len,const uint16_t int_len); char*b10_to_u64_digits(const atom_t*const digits,const uint16_t len); uint64_t b10_to_u64(const atom_t*const digits,const uint16_t len); atom_t*ldbl_digits_to_b10(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len,const bool little_endian); atom_t*u64_to_b10(const uint64_t value,uint16_t*const len,const bool little_endian); atom_t*u64_digits_to_b10(const char*const digits,uint16_t*const len,const bool little_endian);   char*b256_to_ldbl_digits(const atom_t*const digits,const uint16_t len,const uint16_t int_len); char*b256_to_u64_digits(const atom_t*const digits,const uint16_t len); uint64_t b256_to_u64(const atom_t*const digits,const uint16_t len); atom_t*ldbl_digits_to_b256(const char*const ldbl_digits,uint16_t*const len,uint16_t*const int_len,const bool little_endian); atom_t*u64_to_b256(const uint64_t value,uint16_t*const len,const bool little_endian); atom_t*u64_digits_to_b256(const char*const digits,uint16_t*const len,const bool little_endian); 
  #endif 
  
 #endif
