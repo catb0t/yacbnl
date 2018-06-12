@@ -1,1 +1,5 @@
 *.o
+*.make
+Makefile
+bin
+obj

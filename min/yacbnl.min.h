@@ -38,7 +38,7 @@
  #define DEC_BASE 10
  #define ZENZ_BASE 256
  #define COMPARE_EPS 1e-11 
- #define CHAR_DIGIT_DIFF ((char) 48) 
+ #define CHAR_DIGIT_DIFF ((uint8_t) 48) 
   
  #ifndef MAX_EXPORT_SIGFIGS
  #define MAX_EXPORT_SIGFIGS ((UINT8_MAX * 2) - (HEADER_OFFSET * 2))
