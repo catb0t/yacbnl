@@ -112,7 +112,7 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
       /* flip the significant digits */
       * const flot_part = str_reverse(ldbl_digits + pre_dec + /* skip separator */ 1); // 2
 
-  uint16_t lhs_len, rhs_len;
+  uint16_t lhs_len = 0, rhs_len = 0;
   atom_t* const lhs_b256 = str_digits_to_b256(int_part, &lhs_len, true),
         /* note argument #3: flip the fractional digits again */
         * const rhs_b256 = str_digits_to_b256(flot_part, &rhs_len, false);

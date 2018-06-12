@@ -50,7 +50,6 @@ workspace "yacbnl"
     filter "configurations:dist"
       buildoptions { "-O3", "-fomit-frame-pointer" }
 
-
   project "test"
     kind "consoleapp"
 
