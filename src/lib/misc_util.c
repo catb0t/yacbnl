@@ -19,6 +19,17 @@ atom_t count_digits_u64 (const uint64_t x) {
 }
 
 /*
+  atom_t*, uint16_t -> bool
+*/
+bool raw_is_zero (const atom_t* const digits, const uint16_t len) {
+  uint16_t sum = 0;
+  for (uint16_t i = 0; i < len; i++) {
+    sum = (uint16_t) ((uint16_t) digits[i] + sum);
+  }
+  return 0 == sum;
+}
+
+/*
   char* -> atom_t
 
   find the beginning of the fractional part of the string representation of a
@@ -151,6 +162,12 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
   return (atom_t) floorf( log256f( (float) x ) + 1.f);
 }
 
+uint16_t count_b256_digits_b10_digits (const char* const digits) {
+  puts("UNIMPLEMENTED");
+  (void) digits;
+  return 0;
+}
+
 /*
   atom_t*, uint16_t -> atom_t*
 
@@ -193,6 +210,13 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   return              memcpy( res + a_len, b, b_len);
 }
 
+bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
+  for (size_t i = 0; i < len; i++) {
+    if (value == arr[i]) { return true; }
+  }
+  return false;
+}
+
 /*
   -> char*
 
@@ -205,27 +229,19 @@ char* make_empty_string (void) {
 /*
   atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
 
-  strspn but for arrays
+  strspn / strcspn but for arrays
   return the length of the initial section of arr which consists only of values
     in accept_only
-  see strspn(3)
+  see strspn(3) and strcspn(3)
 */
-uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
-  (void) arr; (void) arr_len; (void) accept_num; (void) accept_only;
-  return 0;
-}
-
-/*
-  atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
-
-  strcspn but for arrays
-  return the length of the initial section of arr which consists only of values
-    NOT in accept_only
-  see strcspn(3)
-*/
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
-  (void) arr; (void) arr_len; (void) reject_num; (void) reject_only;
-  return 0;
+uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len) {
+  uint16_t i = 0;
+  for (; i < arr_len; i++) {
+    if (accept == !array_contains(vals, vals_len, arr[i])) {
+      break;
+    }
+  }
+  return i;
 }
 
 /*
@@ -239,19 +255,19 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const bool   is_big = bna_is_big(bn);
 
   const uint16_t
-    len     = (uint16_t) bna_real_len(bn),
+    //len     = (uint16_t) bna_real_len(bn),
     int_len = bna_int_len(bn),
     frc_len = bna_frac_len(bn);
 
-  atom_t const * rev_cpy = array_reverse(bn, len);
+  //atom_t const * rev_cpy = array_reverse(bn, len);
 
-  uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
-
+  //uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
+  puts("UNIMPLEMENTED");
   (void) hdrlen;
   (void) is_big;
   (void) int_len;
   (void) frc_len;
-  (void) consec_zeroes;
+  //(void) consec_zeroes;
 
   return NULL;
 }
@@ -262,6 +278,7 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   remove insignificant traling zeroes from an array of digits in any base
 */
 atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
+  puts("UNIMPLEMENTED");
   (void) bn;
   return NULL;
 }
@@ -276,7 +293,6 @@ char* strndup_c (const char* const s, size_t const n) {
 
   news[len] = '\0';
   return memcpy(news, s, len);
-
 }
 
 size_t strnlen_c (const char* const s, const size_t maxsize) {
@@ -299,6 +315,14 @@ size_t str_count (const char* const str, const char find) {
     if (find == str[i]) { ++ocur; }
   }
   return ocur;
+}
+
+void say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
+  printf("atom_t ptr %p+%d: ", (const void* const) data, len);
+  for (uint16_t i = 0; i < len; i++) {
+    printf("%d ", data[i]);
+  }
+  printf(";\n");
 }
 
 #endif /* end of include guard: MISC_UTIL_H */

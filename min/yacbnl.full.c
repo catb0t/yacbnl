@@ -20,18 +20,18 @@
 
 /*
   atom_t: an unsigned one-byte number "atom" element 0-FF
-  bn: big number, usually a struct type or array repr
+  bn: big number, usually a struct type or array repr (see bignum_t)
   bna: big number array; any array of atom_t
   b10 / b256: base 10, base 256
   zenz: base 256-related
   1b / 2b: one-byte and two-byte number interpretation
   u16: a 16 bit integer type
   u64: pertaining to a 64 bit integer type or non-float string representation
-  ldbl: long double; a decimal representation
-  frac / flot: decimal sub-1 part of a number (right of decimal separator in ltr)
+  ldbl: long double; a real / floating representation
+  frac / flot: decimal sub-1 part of a number (right of decimal separator)
   int: integral part of a number (left of decimal separator in ltr)
-  samb: single address multi byte (like SMID)
-  digits: refers usually to a base 10 string represenation of a hardware number
+  samb: single address, multi byte (see addr_interp.c)
+  digits: refers usually to a base 10 string or array represenation of a number value
 */
 
 #ifndef BN_COMMON_H
@@ -227,7 +227,7 @@ typedef struct st_bignum_t {
   #define set_out_param(name, value) do { if ( NULL != (name) ){ *name = value; } } while(0)
 #endif
 
-#ifndef string_isempty
+#ifndef string_is_sempty
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
@@ -250,19 +250,22 @@ bool             compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps);
 atom_t      count_digits_u64 (const uint64_t x);
 atom_t  indexable_digits_u64 (const uint64_t x);
 atom_t count_b256_digits_u64 (const uint64_t x);
+uint16_t count_b256_digits_b10_digits (const char* const digits);
 atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t     count_frac_digits (const char* const str);
 atom_t   find_frac_beginning (const char* const str);
+bool             raw_is_zero (const atom_t* const digits, const uint16_t len);
 
 size_t        strnlen_c (const char* const s, const size_t maxsize);
 char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
 size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
+void say_atom_t_ptr (const atom_t* const data, const uint16_t len);
 
-uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...);
+uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len);
 
+bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
@@ -293,14 +296,143 @@ atom_t*         u64_to_b10 (const uint64_t value, uint16_t* const len, const boo
 atom_t*  u64_digits_to_b10 (const char* const digits, uint16_t* const len, const bool little_endian);
 
 /* base 256 conversions */
-char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*     b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
 char*     b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 uint64_t         b256_to_u64 (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
 atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
 atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian);
 
+/*
+  raw math primitives required to implement basic functionality
+  NOT user-friendly math functions
+
+  math_primitive_base10
+  all these functions are real unsigned!!
+*/
+atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
+atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
+// natural log base e (2.718...)
+atom_t* log_b10 (const atom_t* const n, const uint16_t len, uint16_t* const out_len);
+// log base n of x
+atom_t* logn_b10 (const atom_t* const base /* n */, const atom_t* const n /* x */);
+atom_t* add_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* sub_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* mul_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* div_b10 (const atom_t* const a, const atom_t* const b);
+// x^n
+atom_t* pow_b10 (const atom_t* const x, const atom_t* const n);
+
 #endif /* end of include guard: BN_COMMON_H */
+
+#ifndef MATH_PRIMITIVE_BASE10
+#define MATH_PRIMITIVE_BASE10
+/* simple unsigned real number math */
+static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uint16_t* const out_len) {
+  // last digit is not 0
+  if (0 != n[len - 1]) {
+    set_out_param(out_len, len);
+    // only the last digit changes, so copy all the preceding digits
+    atom_t* const result = memcpy(alloc(atom_t, len), n, len - 1);
+    // then take 1
+    result[len - 1] = n[len - 1] - 1;
+    return result;
+  } else {
+    /*
+      12300 -> 00321 -> 321 -> 221 -> 99221 -> 12299
+      12100 -> 00121 -> 121 -> 021 -> 99021 -> 12099
+      50000 -> 00005 -> 5   -> 4   -> 99994 -> 49999
+      10000 -> 00001 -> 1   -> 0   -> 99990 -> 09999 -> 9999
+    */
+    // one or more last digits are 0
+    atom_t* const reversed = array_reverse(n, len);
+    atom_t* const z = zalloc(atom_t, 1);
+    const uint16_t count_leading_zeroes = array_span(reversed, len, true, z, 1);
+    free(z);
+    const uint16_t count_nonzeroes = len - count_leading_zeroes;
+    // 12300 -> 00321 -> 321
+    // skip the leading zeroes when copying, allocate and copy only the "nonzero" number of digits
+    atom_t* const drop_leading_zeroes = memcpy(alloc(atom_t, count_nonzeroes), reversed + count_leading_zeroes, count_nonzeroes);
+    free(reversed);
+    // take 1 from the first reversed nonzero digit
+    drop_leading_zeroes[0] -= 1U;
+    // space for 00321
+    atom_t* const reversed_emplace_nines = alloc(atom_t, len);
+    // 00321 -> 99221
+    memcpy(reversed_emplace_nines + count_leading_zeroes, drop_leading_zeroes, count_nonzeroes);
+    free(drop_leading_zeroes);
+    atom_t* const pred_with_leading_zero = array_reverse(reversed_emplace_nines, len);
+    free(reversed_emplace_nines);
+    atom_t* final = array_trim_leading_zeroes(pred_with_leading_zero);
+    free(pred_with_leading_zero);
+    const bool shortened = (1 == n[0]) && (1 == count_nonzeroes);
+    set_out_param(out_len, len - shortened);
+    return final;
+  }
+}
+static atom_t* impl_pred_b10_flot (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len) {
+  return NULL;
+}
+/*
+  atom_t*, uint16_t -> atom_t*, uint16_t
+  the number before n
+    before 0 is 0
+    before 1 is 0
+    before 9 is 8
+    before 10 is 9
+    before 11 is 10
+    before 20 is 19
+    before 100 is 99
+    before 1.23 pr=2 is 1.22
+    before 1.23 pr=1 is 1.13
+    before 1.20 pr=0 is 0.23
+*/
+atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len) {
+  if ( raw_is_zero(n, len) ) {
+    set_out_param(out_len, 0);
+    return zalloc(atom_t, 1);
+  }
+  if (len == int_len || 0 == precision) {
+    return impl_pred_b10_int(n, len, out_len);
+  } else {
+    return impl_pred_b10_flot(n, len, int_len, precision, out_len);
+  }
+}
+/*
+  atom_t*, uint16_t -> atom_t*, uint16_t
+*/
+atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len) {
+  if ( raw_is_zero(a, len) ) {
+    set_out_param(out_len, 0);
+    return zalloc(atom_t, 1);
+  }
+}
+atom_t* add_b10 (const atom_t* const a, const atom_t* const b) {
+}
+static const atom_t euler_constant[] = { 2, 7, 1, 8, 2, 8, 1, 8, 2, 8, 4, 5, 9, 0, 4, 5, 2, 3, 5, 3, 6, 0, 2, 8, 7, 4, 7, 1, 3, 5, 2, 6, 6, 2, 4, 9, 7, 7, 5, 7, 2, 4, 7, 0, 9, 3, 6, 9, 9, 9, 5, 9, 5, 7, 4, 9, 6, 6
+};
+static const uint16_t euler_constant_int_len = 1;
+static const uint16_t euler_constant_len = 58;
+// i would like 10 digits of precision. is that too much to ask?
+atom_t* log_b10 (const atom_t* const n, const uint16_t len, uint16_t* const out_len) {
+  // log 0 == inf == 0
+  if ( raw_is_zero(n, len) ) {
+    errno = EINVAL;
+    set_out_param(out_len, 0);
+    return zalloc(atom_t, 1);
+  }
+  uint16_t pred_len = 0;
+  atom_t* const pred_n = pred_b10(n, len, len, 0, &pred_len);
+  // log 1 == 0
+  if ( raw_is_zero(n, pred_len) ) {
+    free(pred_n);
+    set_out_param(out_len, 0);
+    return zalloc(atom_t, 1);
+  }
+  // END GUARDS
+}
+#endif /* end of include guard: MATH_PRIMITIVE_BASE10 */
+
 
 #ifndef BASE10_H
 #define BASE10_H
@@ -311,24 +443,32 @@ atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, con
   an empty string is returned when
     len is 0
     int_len is greater than len
+    digits is NULL
 */
 char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len) {
   if (NULL == digits || ! len || int_len > len) { return make_empty_string(); }
-  char* const int_part = alloc(char, len);
+  char* const int_part = alloc(char, int_len + 1);
   for (size_t i = 0; i < int_len; i++) {
     int_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
   }
+  int_part[int_len] = '\0';
   const size_t flot_len = (size_t) ((size_t) len - int_len);
-  char* const flot_part = alloc(char, flot_len);
+  char* const flot_part = alloc(char, flot_len + 1);
   for (size_t i = 0; i < flot_len; i++) {
-    flot_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
+    flot_part[i] = (char) ((char) digits[int_len + i] + CHAR_DIGIT_DIFF);
   }
+  flot_part[flot_len] = '\0';
   const bool dot = len != int_len;
   char* const final_concat = alloc(char, int_len + dot + flot_len);
   snprintf(final_concat, MAX_STR_LDBL_DIGITS, "%s%s%s", int_part, (dot ? DECIMAL_SEPARATOR_STR : ""), flot_part);
   free(int_part), free(flot_part);
   return final_concat;
 }
+/*
+  atom_t*, uint16_t -> char*
+  base 10 array into a string base 10 number
+  very simple operation to subtract CHAR_DIGIT_DIFF
+*/
 char* b10_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   char* const u64_str = alloc(char, len + 1);
   for (uint16_t i = 0; i < len; i++) {
@@ -337,6 +477,12 @@ char* b10_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   u64_str[len] = '\0';
   return u64_str;
 }
+/*
+  atom_t*, uint16_t -> uint64_t
+  like b10_to_u64_digits but the conversion is to a number value
+  the conversion may overflow, to avoid this check errno
+    and use b10_to_u64_digits
+*/
 uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
   char* const u64_str = b10_to_u64_digits(digits, len);
   const uint64_t final = strtoull(u64_str, NULL, DEC_BASE);
@@ -344,6 +490,10 @@ uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
   return final;
 }
 // string 123.45 to { 1 2 3 4 5 ... }
+/*
+  char*, bool -> atom_t*, uint16_t, uint16_t
+  convert a string of base 10 long double (floating) digits to
+*/
 atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* const len, /* out */ uint16_t* const int_len, const bool little_endian) {
   if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     set_out_param(len, 1);
@@ -616,7 +766,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
   /* going to use base 256 */
   if (using_base256) {
     /* convert to array representation */
-    uint16_t len;
+    uint16_t len = 0;
     /* little endian*/
     atom_t* as_digits = u64_to_b256(u64, &len, true);
     /* just copy the data into the rest of the array */
@@ -646,12 +796,8 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
 
 #ifndef BASE256_H
 #define BASE256_H
-static uint16_t count_b256_digits_b10 (const char* const digits) {
-  (void) digits;
-  return 0;
-}
 /*
-  char*, uint16_t*, bool -> atom_t*
+  char*, bool -> atom_t*, uint16_t*
   transform a uint64_t (string) to its base 256 representation in bytes
   the value at len is changed to the new length of the representation
   if little_endian is true, then the result is reversed
@@ -665,10 +811,11 @@ atom_t* u64_digits_to_b256 (const char* const u64_str, uint16_t* const len, cons
     set_out_param(len, 1);
     return zalloc(atom_t, 1);
   }
-  atom_t* const result = zalloc(atom_t, count_b256_digits_b10(u64_str));
+  atom_t* const result = zalloc(atom_t, count_b256_digits_b10_digits(u64_str));
   atom_t* const as_b10 = u64_digits_to_b10(u64_str, len, false);
   (void) little_endian;
   (void) as_b10;
+  puts("UNIMPLEMENTED");
   /* big endian! */
   /*
     for (uint64_t tempr = value; tempr; i++) {
@@ -685,6 +832,7 @@ atom_t* u64_digits_to_b256 (const char* const u64_str, uint16_t* const len, cons
   char* -> atom_t*
 */
 static atom_t* str_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian) {
+  puts("UNIMPLEMENTED");
   (void) digits;
   (void) len;
   (void) little_endian;
@@ -824,7 +972,7 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   // 6 leaves scope
   return out_str;
 }
-atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
+atom_t* u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
   char* const val_str = alloc(char, count_digits_u64(value));
   snprintf(val_str, MAX_U64_DIGITS, "%" PRIu64 "", value);
   atom_t* const result = u64_digits_to_b256(val_str, len, little_endian);
@@ -856,6 +1004,11 @@ uint16_t samb_twoba_to_u16 (const atom_t ah, const atom_t al) {
   // put the high 8 bits at the top and the rest at the bottom
   return (uint16_t) ( (ah << 8) | (atom_t) al);
 }
+/*
+  atom_t[2] -> uint16_t
+  apply samb_twoba_to_u16 to two consecutive values in an atom_t array
+  shorthand for samb_twoba_to_u16(arr[0], arr[1])
+*/
 uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
   return samb_twoba_to_u16(arr[0], arr[1]);
 }
@@ -875,6 +1028,16 @@ bool compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps) {
 */
 atom_t count_digits_u64 (const uint64_t x) {
   return (atom_t) floor( log10f( (float) x) + 1.f );
+}
+/*
+  atom_t*, uint16_t -> bool
+*/
+bool raw_is_zero (const atom_t* const digits, const uint16_t len) {
+  uint16_t sum = 0;
+  for (uint16_t i = 0; i < len; i++) {
+    sum = (uint16_t) ((uint16_t) digits[i] + sum);
+  }
+  return 0 == sum;
 }
 /*
   char* -> atom_t
@@ -976,6 +1139,11 @@ float log256f (const float x) {
 atom_t count_b256_digits_u64 (const uint64_t x) {
   return (atom_t) floorf( log256f( (float) x ) + 1.f);
 }
+uint16_t count_b256_digits_b10_digits (const char* const digits) {
+  puts("UNIMPLEMENTED");
+  (void) digits;
+  return 0;
+}
 /*
   atom_t*, uint16_t -> atom_t*
   copy and reverse an array
@@ -1007,6 +1175,12 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   atom_t* const res = memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
   return              memcpy( res + a_len, b, b_len);
 }
+bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
+  for (size_t i = 0; i < len; i++) {
+    if (value == arr[i]) { return true; }
+  }
+  return false;
+}
 /*
   -> char*
   return an empty (0-length) string
@@ -1016,25 +1190,19 @@ char* make_empty_string (void) {
 }
 /*
   atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
-  strspn but for arrays
+  strspn / strcspn but for arrays
   return the length of the initial section of arr which consists only of values
     in accept_only
-  see strspn(3)
+  see strspn(3) and strcspn(3)
 */
-uint16_t array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...) {
-  (void) arr; (void) arr_len; (void) accept_num; (void) accept_only;
-  return 0;
-}
-/*
-  atom_t*, uint16_t, uint16_t, atom_t... -> uint16_t
-  strcspn but for arrays
-  return the length of the initial section of arr which consists only of values
-    NOT in accept_only
-  see strcspn(3)
-*/
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...) {
-  (void) arr; (void) arr_len; (void) reject_num; (void) reject_only;
-  return 0;
+uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len) {
+  uint16_t i = 0;
+  for (; i < arr_len; i++) {
+    if (accept == !array_contains(vals, vals_len, arr[i])) {
+      break;
+    }
+  }
+  return i;
 }
 /*
   atom_t* -> atom_t*
@@ -1045,16 +1213,17 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   const atom_t hdrlen = bna_header_offset(bn);
   const bool   is_big = bna_is_big(bn);
   const uint16_t
-    len     = (uint16_t) bna_real_len(bn),
+    //len     = (uint16_t) bna_real_len(bn),
     int_len = bna_int_len(bn),
     frc_len = bna_frac_len(bn);
-  atom_t const * rev_cpy = array_reverse(bn, len);
-  uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
+  //atom_t const * rev_cpy = array_reverse(bn, len);
+  //uint16_t consec_zeroes = array_spn(rev_cpy, len, 1, 0);
+  puts("UNIMPLEMENTED");
   (void) hdrlen;
   (void) is_big;
   (void) int_len;
   (void) frc_len;
-  (void) consec_zeroes;
+  //(void) consec_zeroes;
   return NULL;
 }
 /*
@@ -1091,6 +1260,13 @@ size_t str_count (const char* const str, const char find) {
     if (find == str[i]) { ++ocur; }
   }
   return ocur;
+}
+void say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
+  printf("atom_t ptr %p+%d: ", (const void* const) data, len);
+  for (uint16_t i = 0; i < len; i++) {
+    printf("%d ", data[i]);
+  }
+  printf(";\n");
 }
 #endif /* end of include guard: MISC_UTIL_H */
 

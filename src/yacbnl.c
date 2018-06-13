@@ -3,4 +3,5 @@
 #include "lib/base256.c"
 #include "lib/base10.c"
 #include "lib/bignum.c"
+#include "lib/math_primitive_base10.c"
 #include "lib/misc_util.c"

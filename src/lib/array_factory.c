@@ -53,12 +53,10 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 
   // not zero so we'll use it
   if ( ! compare_eps(ldbl, 0.f, COMPARE_EPS) ) {
-
     return impl_to_digit_array_ldbl(ldbl, metadata, flags);
 
   // use this instead
   } else if ( 0 != u64 ) {
-
     return impl_to_digit_array_u64(u64, metadata, flags);
 
   } else /* both are zero, just give zero */ {
@@ -196,7 +194,7 @@ static atom_t* impl_to_digit_array_u64 (const uint64_t u64, const atom_t metadat
   /* going to use base 256 */
   if (using_base256) {
     /* convert to array representation */
-    uint16_t len;
+    uint16_t len = 0;
     /* little endian*/
     atom_t* as_digits = u64_to_b256(u64, &len, true);
 

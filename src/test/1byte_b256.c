@@ -8,21 +8,22 @@ Test(a1b256, bna_u64) {
   // zero
   atom_t
     * a = to_digit_array(0, 0, FL_NONE, TYP_ZENZ),
-    z[HEADER_OFFSET] = { TYP_ZENZ, 0, 0, 0 };
+    z[HEADER_OFFSET] = { TYP_ZENZ, 0, FL_NONE, 0 };
 
   cr_assert_arr_eq(z, a, sz(atom_t, HEADER_OFFSET));
   free(a);
 
   // 1
   a = to_digit_array(0, 1, FL_NONE, TYP_ZENZ);
-  atom_t s[HEADER_OFFSET + 1] = { TYP_ZENZ, 1, 0, 0, 1 };
+  atom_t s[HEADER_OFFSET + 1] = { TYP_ZENZ, 1, 0, FL_NONE, 1 };
+  say_atom_t_ptr(a, HEADER_OFFSET + 1);
 
   cr_assert_arr_eq(s, a, sz(atom_t, 1 + HEADER_OFFSET));
   free(a);
 
   // 23
   a = to_digit_array(0, 23, FL_NONE, TYP_ZENZ);
-  atom_t s2[HEADER_OFFSET + 1] = { TYP_ZENZ, 1, 0, 0, 23 };
+  atom_t s2[HEADER_OFFSET + 1] = { TYP_ZENZ, 1, 0, FL_NONE, 23 };
 
   cr_assert_arr_eq(s2, a, sz(atom_t, 1 + HEADER_OFFSET));
   free(a);

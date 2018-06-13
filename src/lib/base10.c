@@ -12,24 +12,28 @@
   an empty string is returned when
     len is 0
     int_len is greater than len
+    digits is NULL
 */
 char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len) {
   if (NULL == digits || ! len || int_len > len) { return make_empty_string(); }
 
-  char* const int_part = alloc(char, len);
+  char* const int_part = alloc(char, int_len + 1);
 
   for (size_t i = 0; i < int_len; i++) {
     int_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
   }
+  int_part[int_len] = '\0';
 
   const size_t flot_len = (size_t) ((size_t) len - int_len);
 
-  char* const flot_part = alloc(char, flot_len);
+  char* const flot_part = alloc(char, flot_len + 1);
 
   for (size_t i = 0; i < flot_len; i++) {
-    flot_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
+    flot_part[i] = (char) ((char) digits[int_len + i] + CHAR_DIGIT_DIFF);
 
   }
+  flot_part[flot_len] = '\0';
+
   const bool dot = len != int_len;
 
   char* const final_concat = alloc(char, int_len + dot + flot_len);
@@ -41,6 +45,12 @@ char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const 
   return final_concat;
 }
 
+/*
+  atom_t*, uint16_t -> char*
+
+  base 10 array into a string base 10 number
+  very simple operation to subtract CHAR_DIGIT_DIFF
+*/
 char* b10_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   char* const u64_str = alloc(char, len + 1);
 
@@ -51,6 +61,13 @@ char* b10_to_u64_digits (const atom_t* const digits, const uint16_t len) {
   return u64_str;
 }
 
+/*
+  atom_t*, uint16_t -> uint64_t
+
+  like b10_to_u64_digits but the conversion is to a number value
+  the conversion may overflow, to avoid this check errno
+    and use b10_to_u64_digits
+*/
 uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
   char* const u64_str = b10_to_u64_digits(digits, len);
   const uint64_t final = strtoull(u64_str, NULL, DEC_BASE);
@@ -59,6 +76,11 @@ uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
 }
 
 // string 123.45 to { 1 2 3 4 5 ... }
+/*
+  char*, bool -> atom_t*, uint16_t, uint16_t
+
+  convert a string of base 10 long double (floating) digits to
+*/
 atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* const len, /* out */ uint16_t* const int_len, const bool little_endian) {
 
   if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {

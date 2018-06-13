@@ -18,18 +18,18 @@
 
 /*
   atom_t: an unsigned one-byte number "atom" element 0-FF
-  bn: big number, usually a struct type or array repr
+  bn: big number, usually a struct type or array repr (see bignum_t)
   bna: big number array; any array of atom_t
   b10 / b256: base 10, base 256
   zenz: base 256-related
   1b / 2b: one-byte and two-byte number interpretation
   u16: a 16 bit integer type
   u64: pertaining to a 64 bit integer type or non-float string representation
-  ldbl: long double; a decimal representation
-  frac / flot: decimal sub-1 part of a number (right of decimal separator in ltr)
+  ldbl: long double; a real / floating representation
+  frac / flot: decimal sub-1 part of a number (right of decimal separator)
   int: integral part of a number (left of decimal separator in ltr)
-  samb: single address multi byte (like SMID)
-  digits: refers usually to a base 10 string represenation of a hardware number
+  samb: single address, multi byte (see addr_interp.c)
+  digits: refers usually to a base 10 string or array represenation of a number value
 */
 
 #ifndef BN_COMMON_H
@@ -225,7 +225,7 @@ typedef struct st_bignum_t {
   #define set_out_param(name, value) do { if ( NULL != (name) ){ *name = value; } } while(0)
 #endif
 
-#ifndef string_isempty
+#ifndef string_is_sempty
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
@@ -248,19 +248,22 @@ bool             compare_eps (const ldbl_t a, const ldbl_t b, const ldbl_t eps);
 atom_t      count_digits_u64 (const uint64_t x);
 atom_t  indexable_digits_u64 (const uint64_t x);
 atom_t count_b256_digits_u64 (const uint64_t x);
+uint16_t count_b256_digits_b10_digits (const char* const digits);
 atom_t    get_left_nth_digit (const uint64_t x, const atom_t n);
 atom_t     count_frac_digits (const char* const str);
 atom_t   find_frac_beginning (const char* const str);
+bool             raw_is_zero (const atom_t* const digits, const uint16_t len);
 
 size_t        strnlen_c (const char* const s, const size_t maxsize);
 char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
 size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
+void say_atom_t_ptr (const atom_t* const data, const uint16_t len);
 
-uint16_t  array_spn (const atom_t* arr, const uint16_t arr_len, const uint16_t accept_num, const atom_t accept_only, ...);
-uint16_t array_cspn (const atom_t* arr, const uint16_t arr_len, const uint16_t reject_num, const atom_t reject_only, ...);
+uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len);
 
+bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
@@ -291,11 +294,31 @@ atom_t*         u64_to_b10 (const uint64_t value, uint16_t* const len, const boo
 atom_t*  u64_digits_to_b10 (const char* const digits, uint16_t* const len, const bool little_endian);
 
 /* base 256 conversions */
-char*    b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
+char*     b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
 char*     b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
 uint64_t         b256_to_u64 (const atom_t* const digits, const uint16_t len);
 atom_t*  ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian);
 atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian);
 atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian);
+
+/*
+  raw math primitives required to implement basic functionality
+  NOT user-friendly math functions
+
+  math_primitive_base10
+  all these functions are real unsigned!!
+*/
+atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
+atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
+// natural log base e (2.718...)
+atom_t* log_b10 (const atom_t* const n, const uint16_t len, uint16_t* const out_len);
+// log base n of x
+atom_t* logn_b10 (const atom_t* const base /* n */, const atom_t* const n /* x */);
+atom_t* add_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* sub_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* mul_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* div_b10 (const atom_t* const a, const atom_t* const b);
+// x^n
+atom_t* pow_b10 (const atom_t* const x, const atom_t* const n);
 
 #endif /* end of include guard: BN_COMMON_H */

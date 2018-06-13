@@ -40,5 +40,4 @@ Test(addrmodes, 2to1) {
   cr_assert_eq(257, samb_twoba_to_u16(1, 1));
 
   cr_assert_eq(0, samb_twoba_to_u16(0, 0));
-
 }

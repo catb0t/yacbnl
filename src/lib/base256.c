@@ -3,13 +3,8 @@
 
 #include "bn_common.h"
 
-static uint16_t count_b256_digits_b10 (const char* const digits) {
-  (void) digits;
-  return 0;
-}
-
 /*
-  char*, uint16_t*, bool -> atom_t*
+  char*, bool -> atom_t*, uint16_t*
 
   transform a uint64_t (string) to its base 256 representation in bytes
 
@@ -30,11 +25,12 @@ atom_t* u64_digits_to_b256 (const char* const u64_str, uint16_t* const len, cons
     return zalloc(atom_t, 1);
   }
 
-  atom_t* const result = zalloc(atom_t, count_b256_digits_b10(u64_str));
+  atom_t* const result = zalloc(atom_t, count_b256_digits_b10_digits(u64_str));
 
   atom_t* const as_b10 = u64_digits_to_b10(u64_str, len, false);
   (void) little_endian;
   (void) as_b10;
+  puts("UNIMPLEMENTED");
 
   /* big endian! */
   /*
@@ -55,6 +51,7 @@ atom_t* u64_digits_to_b256 (const char* const u64_str, uint16_t* const len, cons
   char* -> atom_t*
 */
 static atom_t* str_digits_to_b256 (const char* const digits, uint16_t* const len, const bool little_endian) {
+  puts("UNIMPLEMENTED");
   (void) digits;
   (void) len;
   (void) little_endian;
@@ -250,9 +247,8 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   return out_str;
 }
 
-atom_t*          u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
+atom_t* u64_to_b256 (const uint64_t value, uint16_t* const len, const bool little_endian) {
   char* const val_str = alloc(char, count_digits_u64(value));
-
   snprintf(val_str, MAX_U64_DIGITS, "%" PRIu64 "", value);
 
   atom_t* const result = u64_digits_to_b256(val_str, len, little_endian);
