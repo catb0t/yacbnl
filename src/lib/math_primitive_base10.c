@@ -38,9 +38,10 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     // 00321 -> 99221
     memcpy(reversed_emplace_nines + count_leading_zeroes, drop_leading_zeroes, count_nonzeroes);
     free(drop_leading_zeroes);
+    memset(reversed_emplace_nines, 9, count_leading_zeroes);
     atom_t* const pred_with_leading_zero = array_reverse(reversed_emplace_nines, len);
     free(reversed_emplace_nines);
-    atom_t* final = array_trim_leading_zeroes(pred_with_leading_zero);
+    atom_t* final = array_trim_leading_zeroes(pred_with_leading_zero, len);
     free(pred_with_leading_zero);
     const bool shortened = (1 == n[0]) && (1 == count_nonzeroes);
     set_out_param(out_len, (uint16_t) (len - shortened));

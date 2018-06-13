@@ -267,7 +267,7 @@ bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
-atom_t*  array_trim_leading_zeroes (const atom_t* const bn);
+atom_t*  array_trim_leading_zeroes (const atom_t* const bn, const uint16_t len);
 
 
 /* bignum_t */

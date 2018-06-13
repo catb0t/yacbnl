@@ -275,12 +275,14 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
 /*
   atom_t* -> atom_t*
 
-  remove insignificant traling zeroes from an array of digits in any base
+  remove insignificant leading zeroes from an array of digits in any base
 */
-atom_t* array_trim_leading_zeroes (const atom_t* const bn) {
-  puts("UNIMPLEMENTED");
-  (void) bn;
-  return NULL;
+atom_t* array_trim_leading_zeroes (const atom_t* const bn, const uint16_t len) {
+  atom_t* const z = zalloc(atom_t, 1);
+  const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
+  free(z);
+  const uint16_t nonzeroes = (uint16_t) (len - count_leading_zeroes);
+  return memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
 }
 
 char* strndup_c (const char* const s, size_t const n) {
