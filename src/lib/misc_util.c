@@ -164,8 +164,25 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
 
 uint16_t count_b256_digits_b10_digits (const char* const digits) {
   puts("UNIMPLEMENTED");
-  (void) digits;
-  return 0;
+  uint16_t len_initial = 0;
+  atom_t* const as_atoms = u64_digits_to_b10(digits, &len_initial, false);
+  #define LEN_256 ((atom_t) 3)
+  static const atom_t b10_256[LEN_256] = { 2, 5, 6 };
+  // logn_b10(256, digits)
+  uint16_t log_len = 0, log_int_len = 0;
+  atom_t* const log256 = logn_b10 (b10_256, LEN_256, LEN_256, as_atoms, len_initial, len_initial, &log_len, &log_int_len);
+  free(as_atoms);
+  // add 1
+  uint16_t len_add1 = 0, int_len_add1 = 0;
+  atom_t* const add1 = succ_b10(log256, len_initial, len_initial, 0, &len_add1, &int_len_add1);
+  free(log256);
+  // floor
+  atom_t* const floored = floor_b10(add1, len_add1, int_len_add1);
+  free(add1);
+  // convert to hardware
+  const uint16_t final = b10_to_u16(floored, len_add1);
+  free(floored);
+  return final;
 }
 
 /*
@@ -277,7 +294,7 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
 
   remove insignificant leading zeroes from an array of digits in any base
 */
-atom_t* array_trim_leading_zeroes (const atom_t* const bn, const uint16_t len) {
+atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len) {
   atom_t* const z = zalloc(atom_t, 1);
   const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
   free(z);

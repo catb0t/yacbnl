@@ -266,8 +266,11 @@ uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accep
 bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
-atom_t* array_trim_trailing_zeroes (const atom_t* const bn);
-atom_t*  array_trim_leading_zeroes (const atom_t* const bn, const uint16_t len);
+
+atom_t*         array_trim_leading_zeroes (const atom_t* const bn);
+atom_t*        array_trim_trailing_zeroes (const atom_t* const bn);
+atom_t* array_trim_trailing_zeroes_simple (const atom_t* const bn, const uint16_t len);
+atom_t*  array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len);
 
 
 /* bignum_t */
@@ -293,6 +296,8 @@ atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, uint16_t* const len, 
 atom_t*         u64_to_b10 (const uint64_t value, uint16_t* const len, const bool little_endian);
 atom_t*  u64_digits_to_b10 (const char* const digits, uint16_t* const len, const bool little_endian);
 
+uint16_t b10_to_u16 (const atom_t* const, const uint16_t len);
+
 /* base 256 conversions */
 char*     b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const uint16_t int_len);
 char*     b256_to_u64_digits (const atom_t* const digits, const uint16_t len);
@@ -308,17 +313,20 @@ atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, con
   math_primitive_base10
   all these functions are real unsigned!!
 */
-atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
-atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len);
+atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len);
 // natural log base e (2.718...)
-atom_t* log_b10 (const atom_t* const n, const uint16_t len, uint16_t* const out_len);
+atom_t* log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 // log base n of x
-atom_t* logn_b10 (const atom_t* const base /* n */, const atom_t* const n /* x */);
+atom_t* logn_b10 (const atom_t* const base /* n */, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n /* x */, const uint16_t n_len, const uint16_t n_int_len, /* out */ uint16_t* const out_len, /* out */ uint16_t* const out_int_len);
 atom_t* add_b10 (const atom_t* const a, const atom_t* const b);
 atom_t* sub_b10 (const atom_t* const a, const atom_t* const b);
 atom_t* mul_b10 (const atom_t* const a, const atom_t* const b);
-atom_t* div_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* div_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+
 // x^n
 atom_t* pow_b10 (const atom_t* const x, const atom_t* const n);
+
+atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len);
 
 #endif /* end of include guard: BN_COMMON_H */

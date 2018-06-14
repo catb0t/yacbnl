@@ -75,6 +75,11 @@ uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
   return final;
 }
 
+uint16_t b10_to_u16(const atom_t* const n, const uint16_t len) {
+  (void) n; (void) len;
+  return 0;
+}
+
 // string 123.45 to { 1 2 3 4 5 ... }
 /*
   char*, bool -> atom_t*, uint16_t, uint16_t
