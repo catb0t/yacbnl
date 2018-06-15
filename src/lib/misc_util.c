@@ -162,6 +162,11 @@ atom_t count_b256_digits_u64 (const uint64_t x) {
   return (atom_t) floorf( log256f( (float) x ) + 1.f);
 }
 
+/*
+  char* -> uint16_t
+
+  count the number of digits needed in base 256 to represent the base 10 input
+*/
 uint16_t count_b256_digits_b10_digits (const char* const digits) {
   puts("UNIMPLEMENTED");
   uint16_t len_initial = 0;
@@ -177,7 +182,8 @@ uint16_t count_b256_digits_b10_digits (const char* const digits) {
   atom_t* const add1 = succ_b10(log256, len_initial, len_initial, 0, &len_add1, &int_len_add1);
   free(log256);
   // floor
-  atom_t* const floored = floor_b10(add1, len_add1, int_len_add1);
+  uint16_t floored_len = 0, floored_int_len = 0;
+  atom_t* const floored = floor_b10(add1, len_add1, int_len_add1, &floored_len, &floored_int_len);
   free(add1);
   // convert to hardware
   const uint16_t final = b10_to_u16(floored, len_add1);
@@ -228,10 +234,25 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
 }
 
 bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
-  for (size_t i = 0; i < len; i++) {
-    if (value == arr[i]) { return true; }
+  if (len) {
+      for (size_t i = 0; i < len; i++) {
+      if (value == arr[i]) { return true; }
+    }
   }
   return false;
+}
+
+atom_t* array_copy (const atom_t* const a, const uint16_t len) {
+  atom_t* result = alloc(atom_t, len);
+
+  if (len) {
+    for (uint16_t i = 0; i < len; i++) {
+      result[i] = a[i];
+    }
+  }
+
+  return result;
+
 }
 
 /*

@@ -4,16 +4,14 @@
 int main(void) {
   puts("main");
 
-  const ldbl_t max = LDBL_MAX;
+  //const ldbl_t max = LDBL_MAX;
 
-  printf("%Lf\n", max);
-  printf("%LG\n", max);
+  //printf("%Lf\n", max);
+  //printf("%LG\n", max);
 
   uint16_t len, int_len;
 
   atom_t* const ds = ldbl_digits_to_b256("340282366920938463463374607431768211455.0", &len, &int_len, false);
-
-  perror("");
 
   for (size_t i = 0; i < len; i++) {
     printf("%d", ds[i]);

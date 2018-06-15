@@ -63,6 +63,12 @@ workspace "yacbnl"
     filter "configurations:dist"
       buildoptions { "-O0", "-fomit-frame-pointer" }
 
+  project "poke_minified"
+    kind "consoleapp"
+    files { "util/_min_test.c", "min/yacbnl.min.c" }
+    targetdir "bin/%{cfg.buildcfg}"
+    targetname "min_build_%{wks.name}"
+
   project "minify"
     kind "utility"
 

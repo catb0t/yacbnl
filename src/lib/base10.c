@@ -76,7 +76,8 @@ uint64_t b10_to_u64 (const atom_t* const digits, const uint16_t len) {
 }
 
 uint16_t b10_to_u16(const atom_t* const n, const uint16_t len) {
-  (void) n; (void) len;
+  (void) n;
+  (void) len;
   return 0;
 }
 

@@ -229,6 +229,11 @@ typedef struct st_bignum_t {
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
+#ifndef log_b10
+  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, 1000)
+#endif
+
+
 /* individual values */
 typedef enum {
   BN_NONE = 0,
@@ -266,6 +271,7 @@ uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accep
 bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
 atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
+atom_t*    array_copy (const atom_t* const a, const uint16_t len);
 
 atom_t*         array_trim_leading_zeroes (const atom_t* const bn);
 atom_t*        array_trim_trailing_zeroes (const atom_t* const bn);
@@ -316,17 +322,18 @@ atom_t*   u64_digits_to_b256 (const char* const digits, uint16_t* const len, con
 atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len);
 // natural log base e (2.718...)
-atom_t* log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len, const uint16_t iterations);
 // log base n of x
-atom_t* logn_b10 (const atom_t* const base /* n */, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n /* x */, const uint16_t n_len, const uint16_t n_int_len, /* out */ uint16_t* const out_len, /* out */ uint16_t* const out_int_len);
-atom_t* add_b10 (const atom_t* const a, const atom_t* const b);
-atom_t* sub_b10 (const atom_t* const a, const atom_t* const b);
-atom_t* mul_b10 (const atom_t* const a, const atom_t* const b);
+atom_t* logn_b10 (const atom_t* const base, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* add_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* sub_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* mul_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* div_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* pow_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 
-// x^n
-atom_t* pow_b10 (const atom_t* const x, const atom_t* const n);
-
-atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len);
+atom_t* times2_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* sq_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* recip_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 
 #endif /* end of include guard: BN_COMMON_H */
