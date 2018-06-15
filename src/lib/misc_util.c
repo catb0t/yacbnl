@@ -171,11 +171,10 @@ uint16_t count_b256_digits_b10_digits (const char* const digits) {
   puts("UNIMPLEMENTED");
   uint16_t len_initial = 0;
   atom_t* const as_atoms = u64_digits_to_b10(digits, &len_initial, false);
-  #define LEN_256 ((atom_t) 3)
-  static const atom_t b10_256[LEN_256] = { 2, 5, 6 };
+  static const atom_t b10_256[3] = { 2, 5, 6 };
   // logn_b10(256, digits)
   uint16_t log_len = 0, log_int_len = 0;
-  atom_t* const log256 = logn_b10 (b10_256, LEN_256, LEN_256, as_atoms, len_initial, len_initial, &log_len, &log_int_len);
+  atom_t* const log256 = logn_b10 (b10_256, 3, 3, as_atoms, len_initial, len_initial, &log_len, &log_int_len);
   free(as_atoms);
   // add 1
   uint16_t len_add1 = 0, int_len_add1 = 0;

@@ -20,17 +20,16 @@ char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const 
   char* const int_part = alloc(char, int_len + 1);
 
   for (size_t i = 0; i < int_len; i++) {
-    int_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
+    int_part[i] = (char) (digits[i] + CHAR_DIGIT_DIFF);
   }
   int_part[int_len] = '\0';
 
-  const size_t flot_len = (size_t) ((size_t) len - int_len);
+  const size_t flot_len = (size_t) (len - int_len);
 
   char* const flot_part = alloc(char, flot_len + 1);
 
   for (size_t i = 0; i < flot_len; i++) {
     flot_part[i] = (char) ((char) digits[int_len + i] + CHAR_DIGIT_DIFF);
-
   }
   flot_part[flot_len] = '\0';
 
@@ -87,7 +86,7 @@ uint16_t b10_to_u16(const atom_t* const n, const uint16_t len) {
 
   convert a string of base 10 long double (floating) digits to
 */
-atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* const len, /* out */ uint16_t* const int_len, const bool little_endian) {
+atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
 
   if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     set_out_param(len, 1);
@@ -104,16 +103,16 @@ atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* c
 
   uint16_t i = 0;
   for (; int_part[i]; i++) {
-    int_part[i]  = (char) ((char) int_part[i] - CHAR_DIGIT_DIFF);
+    int_part[i]  = (char) (int_part[i] - CHAR_DIGIT_DIFF);
   }
   const uint16_t int_part_len = i;
 
   for (i = 0; flot_part[i]; i++) {
-    flot_part[i]  = (char) ((char) flot_part[i] - CHAR_DIGIT_DIFF);
+    flot_part[i]  = (char) (flot_part[i] - CHAR_DIGIT_DIFF);
   }
   const uint16_t flot_part_len = i;
 
-  set_out_param(len, (uint16_t) ((uint16_t) int_part_len + flot_part_len));
+  set_out_param(len, (uint16_t) (int_part_len + flot_part_len));
   set_out_param(int_len, int_part_len);
 
   atom_t* const res = alloc(atom_t, digits_len);
@@ -124,7 +123,7 @@ atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* c
   free(int_part), free(flot_part);
 
   if (little_endian) {
-    atom_t* const res_rev = array_reverse(res, (uint16_t)((uint16_t) int_part_len + flot_part_len));
+    atom_t* const res_rev = array_reverse(res, (uint16_t) (int_part_len + flot_part_len));
     free(res);
     return res_rev;
   }

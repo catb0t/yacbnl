@@ -258,7 +258,7 @@ atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t
     total = 0, z = (x + 1) / (x - 1), power = 1, y = 0;
   */
   atom_t* const zero = zalloc(atom_t, 1),
-        * /* const */ total = array_copy(zero, 1),
+        * total = array_copy(zero, 1),
         * power = succ_b10(zero, 1, 1, 0, &power_len, &power_int_len),
         * y = array_copy(zero, 1),
 
@@ -319,7 +319,7 @@ atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t
   return final;
 }
 
-atom_t* logn_b10 (const atom_t* const base /* n */, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n /* x */, const uint16_t n_len, const uint16_t n_int_len, /* out */ uint16_t* const out_len, /* out */ uint16_t* const out_int_len) {
+atom_t* logn_b10 (const atom_t* const base, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
   uint16_t log_base_int_len = 0, log_base_len = 0;
   atom_t* const log_base = log_b10(base, base_len, base_int_len, &log_base_len, &log_base_int_len);
 

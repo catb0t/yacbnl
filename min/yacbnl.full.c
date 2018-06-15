@@ -550,11 +550,6 @@ atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int
   (void) out_int_len;
   return NULL;
 }
-/*static const atom_t euler_constant[] = { 2, 7, 1, 8, 2, 8, 1, 8, 2, 8, 4, 5, 9, 0, 4, 5, 2, 3, 5, 3, 6, 0, 2, 8, 7, 4, 7, 1, 3, 5, 2, 6, 6, 2, 4, 9, 7, 7, 5, 7, 2, 4, 7, 0, 9, 3, 6, 9, 9, 9, 5, 9, 5, 7, 4, 9, 6, 6
-};
-static const uint16_t euler_constant_int_len = 1;
-static const uint16_t euler_constant_len = 58;
-*/
 // i would like 10 digits of precision. is that too much to ask?
 atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len, const uint16_t iterations) {
   /*
@@ -577,7 +572,7 @@ atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t
     total = 0, z = (x + 1) / (x - 1), power = 1, y = 0;
   */
   atom_t* const zero = zalloc(atom_t, 1),
-        * /* const */ total = array_copy(zero, 1),
+        * total = array_copy(zero, 1),
         * power = succ_b10(zero, 1, 1, 0, &power_len, &power_int_len),
         * y = array_copy(zero, 1),
         * const n_succ = succ_b10(n, n_len, n_int_len, 0, &n_succ_len, &n_succ_int_len),
@@ -626,7 +621,7 @@ atom_t* impl_log_b10(const atom_t* const n, const uint16_t n_len, const uint16_t
   free(total);
   return final;
 }
-atom_t* logn_b10 (const atom_t* const base /* n */, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n /* x */, const uint16_t n_len, const uint16_t n_int_len, /* out */ uint16_t* const out_len, /* out */ uint16_t* const out_int_len) {
+atom_t* logn_b10 (const atom_t* const base, const uint16_t base_len, const uint16_t base_int_len, const atom_t* const n, const uint16_t n_len, const uint16_t n_int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
   uint16_t log_base_int_len = 0, log_base_len = 0;
   atom_t* const log_base = log_b10(base, base_len, base_int_len, &log_base_len, &log_base_int_len);
   uint16_t log_n_int_len = 0, log_n_len = 0;
@@ -654,10 +649,10 @@ char* b10_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const 
   if (NULL == digits || ! len || int_len > len) { return make_empty_string(); }
   char* const int_part = alloc(char, int_len + 1);
   for (size_t i = 0; i < int_len; i++) {
-    int_part[i] = (char) ((char) digits[i] + CHAR_DIGIT_DIFF);
+    int_part[i] = (char) (digits[i] + CHAR_DIGIT_DIFF);
   }
   int_part[int_len] = '\0';
-  const size_t flot_len = (size_t) ((size_t) len - int_len);
+  const size_t flot_len = (size_t) (len - int_len);
   char* const flot_part = alloc(char, flot_len + 1);
   for (size_t i = 0; i < flot_len; i++) {
     flot_part[i] = (char) ((char) digits[int_len + i] + CHAR_DIGIT_DIFF);
@@ -704,7 +699,7 @@ uint16_t b10_to_u16(const atom_t* const n, const uint16_t len) {
   char*, bool -> atom_t*, uint16_t, uint16_t
   convert a string of base 10 long double (floating) digits to
 */
-atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* const len, /* out */ uint16_t* const int_len, const bool little_endian) {
+atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, uint16_t* const len, uint16_t* const int_len, const bool little_endian) {
   if ( (0 == strnlen_c(ldbl_digits, MAX_U64_DIGITS + 2)) || NULL == ldbl_digits || NULL == len || NULL == int_len) {
     set_out_param(len, 1);
     set_out_param(int_len, 1);
@@ -717,21 +712,21 @@ atom_t* ldbl_digits_to_b10 (const char* const ldbl_digits, /* out */ uint16_t* c
        *const flot_part = strndup_c(ldbl_digits + pre_dec + 1, MAX_STR_LDBL_DIGITS);
   uint16_t i = 0;
   for (; int_part[i]; i++) {
-    int_part[i]  = (char) ((char) int_part[i] - CHAR_DIGIT_DIFF);
+    int_part[i]  = (char) (int_part[i] - CHAR_DIGIT_DIFF);
   }
   const uint16_t int_part_len = i;
   for (i = 0; flot_part[i]; i++) {
-    flot_part[i]  = (char) ((char) flot_part[i] - CHAR_DIGIT_DIFF);
+    flot_part[i]  = (char) (flot_part[i] - CHAR_DIGIT_DIFF);
   }
   const uint16_t flot_part_len = i;
-  set_out_param(len, (uint16_t) ((uint16_t) int_part_len + flot_part_len));
+  set_out_param(len, (uint16_t) (int_part_len + flot_part_len));
   set_out_param(int_len, int_part_len);
   atom_t* const res = alloc(atom_t, digits_len);
   memcpy(res, int_part, int_part_len);
   memcpy(res + int_part_len + 1, flot_part, flot_part_len);
   free(int_part), free(flot_part);
   if (little_endian) {
-    atom_t* const res_rev = array_reverse(res, (uint16_t)((uint16_t) int_part_len + flot_part_len));
+    atom_t* const res_rev = array_reverse(res, (uint16_t) (int_part_len + flot_part_len));
     free(res);
     return res_rev;
   }
@@ -1357,11 +1352,10 @@ uint16_t count_b256_digits_b10_digits (const char* const digits) {
   puts("UNIMPLEMENTED");
   uint16_t len_initial = 0;
   atom_t* const as_atoms = u64_digits_to_b10(digits, &len_initial, false);
-  #define LEN_256 ((atom_t) 3)
-  static const atom_t b10_256[LEN_256] = { 2, 5, 6 };
+  static const atom_t b10_256[3] = { 2, 5, 6 };
   // logn_b10(256, digits)
   uint16_t log_len = 0, log_int_len = 0;
-  atom_t* const log256 = logn_b10 (b10_256, LEN_256, LEN_256, as_atoms, len_initial, len_initial, &log_len, &log_int_len);
+  atom_t* const log256 = logn_b10 (b10_256, 3, 3, as_atoms, len_initial, len_initial, &log_len, &log_int_len);
   free(as_atoms);
   // add 1
   uint16_t len_add1 = 0, int_len_add1 = 0;

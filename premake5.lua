@@ -63,9 +63,11 @@ workspace "yacbnl"
     filter "configurations:dist"
       buildoptions { "-O0", "-fomit-frame-pointer" }
 
+  -- test the minified code is syntactically correct and compiles
   project "poke_minified"
     kind "consoleapp"
     files { "util/_min_test.c", "min/yacbnl.min.c" }
+    links { "m" }
     targetdir "bin/%{cfg.buildcfg}"
     targetname "min_build_%{wks.name}"
 
