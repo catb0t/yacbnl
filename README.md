@@ -12,7 +12,9 @@ the library isn't written as a single header, but is built into `yacbnl.full.h`;
 
 to compile with slower string operations for primitive conversions rather than floating point math, use `-DPREFER_CHAR_CONV` on the command line or `#define PREFER_CHAR_CONV` before the `#include "yacbnl.h"`.
 
-written in C99 and C11. does not compile in C++; no plans for this currently. you should probably use boost, and in C, you should probably use GMP because this is a toy.
+written in C11, builds as C++ >= 11.
+
+you should probably use boost, and in C, you should probably use GMP because this is a toy.
 
 ---
 
