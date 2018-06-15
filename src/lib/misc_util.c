@@ -222,14 +222,14 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
   }
 
   else if (a_len == a_len + b_len) {
-    return memcpy(alloc(atom_t, a_len), a, a_len);
+    return (atom_t*) memcpy(alloc(atom_t, a_len), a, a_len);
 
   } else if (b_len == a_len + b_len) {
-    return memcpy(alloc(atom_t, b_len), b, b_len);
+    return (atom_t*) memcpy(alloc(atom_t, b_len), b, b_len);
   }
 
-  atom_t* const res = memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
-  return              memcpy( res + a_len, b, b_len);
+  atom_t* const res = (atom_t*) memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
+  return              (atom_t*) memcpy( res + a_len, b, b_len);
 }
 
 bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
@@ -242,16 +242,7 @@ bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t v
 }
 
 atom_t* array_copy (const atom_t* const a, const uint16_t len) {
-  atom_t* result = alloc(atom_t, len);
-
-  if (len) {
-    for (uint16_t i = 0; i < len; i++) {
-      result[i] = a[i];
-    }
-  }
-
-  return result;
-
+  return (atom_t*) memcpy(alloc(atom_t, len),a, len);
 }
 
 /*
@@ -319,7 +310,7 @@ atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t
   const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
   free(z);
   const uint16_t nonzeroes = (uint16_t) (len - count_leading_zeroes);
-  return memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
+  return (atom_t*) memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
 }
 
 char* strndup_c (const char* const s, size_t const n) {
@@ -331,7 +322,7 @@ char* strndup_c (const char* const s, size_t const n) {
   }
 
   news[len] = '\0';
-  return memcpy(news, s, len);
+  return (char*) memcpy(news, s, len);
 }
 
 size_t strnlen_c (const char* const s, const size_t maxsize) {

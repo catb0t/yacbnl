@@ -35,7 +35,7 @@ uint16_t samb_twoba_to_u16 (const atom_t ah, const atom_t al) {
   apply samb_twoba_to_u16 to two consecutive values in an atom_t array
   shorthand for samb_twoba_to_u16(arr[0], arr[1])
 */
-uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
+uint16_t samb_twoarray_to_u16 (const atom_t arr[2]) {
   return samb_twoba_to_u16(arr[0], arr[1]);
 }
 

@@ -160,10 +160,10 @@ uint64_t b256_to_u64 (const atom_t* const digits, const uint16_t len) {
     return 0;
   }
 
-  if (len > MAX_U64_DIGITS) { goto range_err; }
-
   errno = 0;
   uint64_t result = 0;
+
+  if (len > MAX_U64_DIGITS) { goto range_err; }
 
   for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
     result += digits[i] * ( (uint64_t) powl(ZENZ_BASE, i) );
@@ -212,7 +212,7 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   const uint16_t flot_len_orig = (uint16_t) (len - int_len_orig);
 
   /* copy the parts (in base 256) from the original (1 2) */
-  atom_t *const int_b256  = memcpy( alloc(atom_t, int_len_orig), digits, sz(atom_t, int_len_orig)),
+  atom_t *const int_b256  = (atom_t*) memcpy( alloc(atom_t, int_len_orig), digits, sz(atom_t, int_len_orig)),
   /* the flot part needs to be reversed so that it is little endian (descending places from left to right) */
          *const flot_b256 = array_reverse(digits + int_len_orig, flot_len_orig); // big endian -> le
 

@@ -193,6 +193,8 @@ typedef struct st_bignum_t {
 #define      bna_real_len(bna) (bna_int_len(bna) + bna_frac_len(bna) + bna_header_offset(bna))
 // the flags set for this array
 #define         bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
+uint16_t samb_twoarray_to_u16 (const atom_t arr[2]);
+
 // the length of the integer part
 #define       bna_int_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 1) : (bna)[1] )
 // the length of the fractional part
@@ -217,9 +219,9 @@ typedef struct st_bignum_t {
 // multiplies a size by the size of the typename to get the size of a space
 #define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
-#define  alloc(type, size) malloc(( (size_t) size) * sizeof (type))
+#define  alloc(type, size) ((type*) malloc(( (size_t) size) * sizeof (type)))
 // same, but cleans (zeroes) the bytes with calloc
-#define zalloc(type, size) calloc(( (size_t) size),  sizeof (type))
+#define zalloc(type, size) ((type*) calloc(( (size_t) size),  sizeof (type)))
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
@@ -231,8 +233,12 @@ typedef struct st_bignum_t {
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
+#ifndef LOG_ITERATIONS
+  #define LOG_ITERATIONS 1
+#endif
+
 #ifndef log_b10
-  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, 1000)
+  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, LOG_ITERATIONS)
 #endif
 
 
@@ -292,7 +298,7 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 /* 2 byte addressing stuff */
 void        samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
 uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
-uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
+//uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* these are raw atom_t arrays, not bignum structures */
 
@@ -348,7 +354,7 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
   if (0 != n[len - 1]) {
     set_out_param(out_len, len);
     // only the last digit changes, so copy all the preceding digits
-    atom_t* const result = memcpy(alloc(atom_t, len), n, (uint16_t) (len - 1));
+    atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, (uint16_t) (len - 1));
     // then take 1
     result[len - 1] = (atom_t) ((atom_t) n[len - 1] - 1);
     return result;
@@ -365,7 +371,7 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     const uint16_t count_leading_nonzeroes = array_span(n, len, false, z, 1);
     free(z);
     const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_nonzeroes);
-    atom_t* const leading_digits = memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
+    atom_t* const leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
     // take 1 from the first nonzero digit
     leading_digits[count_leading_nonzeroes - 1] = (atom_t) (leading_digits[count_leading_nonzeroes - 1] - 1);
     // space for 00321
@@ -393,9 +399,9 @@ static atom_t* impl_pred_b10_flot (const atom_t* const n, const uint16_t len, co
     // simple case: digit of interest is not 0 so just take 1
     set_out_param(out_len, len);
     set_out_param(out_int_len, int_len);
-    atom_t* const result = memcpy(alloc(atom_t, len), n, len);
+    atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, len);
     // then take 1
-    result[focus_digit] = (atom_t) ((atom_t) n[focus_digit] - 1);
+    result[focus_digit] = (atom_t) (n[focus_digit] - 1);
     return result;
   } else {
     // the digit in focus is 0
@@ -766,60 +772,70 @@ atom_t* u64_digits_to_b10 (const char* const digits, /* out */ uint16_t* const l
   ldbl_t, uint64_t, atom_t, bignum_t** -> bignum_t*
   create a new bignum out of primitives and values or give zero
 */
-bignum_t* bignum_ctor (
-  const ldbl_t   ldbl,
-  const uint64_t u64,
-  const atom_t flags,
-  const bignum_t * const * const opt_vals
-) {
-  bool cx, fr, ex;
-  if (NULL != opt_vals) {
-    cx = NULL != opt_vals[0];
-    fr = NULL != opt_vals[1];
-    ex = NULL != opt_vals[2];
-  } else {
-    cx = fr = ex = 0;
-  }
-  /* create a stack-allocated version of the structure */
-  bignum_t st_bn = {
-    /* real value */
-    .value = to_digit_array(ldbl, u64, flags, 0),
-    /* imaginary part is determined */
-    .imgry = cx
-      ? memcpy(
-          alloc(atom_t, bna_real_len(opt_vals[0]->value)),
-          opt_vals[0]->value,
-          sz(atom_t, bna_real_len(opt_vals[0]->value))
-        )
-      : zalloc(atom_t, HEADER_OFFSET),
-    /* fractional (numerator / denominator) */
-    .fracl = fr
-      ? memcpy(
-        alloc(atom_t, bna_real_len(opt_vals[1]->value)),
-        opt_vals[1]->value,
-        sz(atom_t, bna_real_len(opt_vals[1]->value))
-      )
-      : zalloc(atom_t, HEADER_OFFSET),
-    /* exponent */
-    .expt = ex
-      ? bignum_copy(opt_vals[2], true)
-      : bignum_ctor(0, 0, 0, NULL)
-  };
-  /* copy it to the heap */
-  bignum_t* hp_bn = memcpy( alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
-  return hp_bn;
-}
-/*
-  bignum_t* -> bignum_t*
-  deep copy a bignum_t's properties but not its identity
-*/
-bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
-  if (NULL == bn) {
-    return zalloc(bignum_t, 1);
-  }
-  (void) no_recurse_optionals;
-  return NULL;
-}
+//bignum_t* bignum_ctor (
+//  const ldbl_t   ldbl,
+//  const uint64_t u64,
+//  const atom_t flags,
+//  const bignum_t * const * const opt_vals
+//) {
+//
+//  bool cx, fr, ex;
+//
+//  if (NULL != opt_vals) {
+//    cx = NULL != opt_vals[0];
+//    fr = NULL != opt_vals[1];
+//    ex = NULL != opt_vals[2];
+//  } else {
+//    cx = fr = ex = 0;
+//  }
+//
+//  /* create a stack-allocated version of the structure */
+//  bignum_t st_bn = {
+//    /* real value */
+//    .value = to_digit_array(ldbl, u64, flags, 0),
+//    /* imaginary part is determined */
+//    .imgry = cx
+//      ? memcpy(
+//          alloc(atom_t, bna_real_len(opt_vals[0]->value)),
+//          opt_vals[0]->value,
+//          sz(atom_t, bna_real_len(opt_vals[0]->value))
+//        )
+//      : zalloc(atom_t, HEADER_OFFSET),
+//    /* fractional (numerator / denominator) */
+//    .fracl = fr
+//      ? memcpy(
+//        alloc(atom_t, bna_real_len(opt_vals[1]->value)),
+//        opt_vals[1]->value,
+//        sz(atom_t, bna_real_len(opt_vals[1]->value))
+//      )
+//      : zalloc(atom_t, HEADER_OFFSET),
+//    /* exponent */
+//    .expt = ex
+//      ? bignum_copy(opt_vals[2], true)
+//      : bignum_ctor(0, 0, 0, NULL)
+//  };
+//
+//  /* copy it to the heap */
+//  bignum_t* hp_bn = memcpy( alloc(bignum_t, 1), &st_bn, sizeof(bignum_t) );
+//
+//  return hp_bn;
+//}
+//
+///*
+//  bignum_t* -> bignum_t*
+//
+//  deep copy a bignum_t's properties but not its identity
+//*/
+//bignum_t* bignum_copy (const bignum_t* const bn, const bool no_recurse_optionals) {
+//
+//  if (NULL == bn) {
+//    return zalloc(bignum_t, 1);
+//  }
+//
+//  (void) no_recurse_optionals;
+//
+//  return NULL;
+//}
 #endif /* end of include guard: BIGNUM_H */
 
 
@@ -1115,9 +1131,9 @@ uint64_t b256_to_u64 (const atom_t* const digits, const uint16_t len) {
   if (! digits || ! len ) {
     return 0;
   }
-  if (len > MAX_U64_DIGITS) { goto range_err; }
   errno = 0;
   uint64_t result = 0;
+  if (len > MAX_U64_DIGITS) { goto range_err; }
   for (int16_t i = (int16_t) (len - 1); i > -1; i--) {
     result += digits[i] * ( (uint64_t) powl(ZENZ_BASE, i) );
     if (ERANGE == errno) { goto range_err; }
@@ -1153,7 +1169,7 @@ char* b256_to_ldbl_digits (const atom_t* const digits, const uint16_t len, const
   /* the length of the fractional part is from subtraction */
   const uint16_t flot_len_orig = (uint16_t) (len - int_len_orig);
   /* copy the parts (in base 256) from the original (1 2) */
-  atom_t *const int_b256  = memcpy( alloc(atom_t, int_len_orig), digits, sz(atom_t, int_len_orig)),
+  atom_t *const int_b256  = (atom_t*) memcpy( alloc(atom_t, int_len_orig), digits, sz(atom_t, int_len_orig)),
   /* the flot part needs to be reversed so that it is little endian (descending places from left to right) */
          *const flot_b256 = array_reverse(digits + int_len_orig, flot_len_orig); // big endian -> le
   /* step 2: base 10 parts -> strings */
@@ -1214,7 +1230,7 @@ uint16_t samb_twoba_to_u16 (const atom_t ah, const atom_t al) {
   apply samb_twoba_to_u16 to two consecutive values in an atom_t array
   shorthand for samb_twoba_to_u16(arr[0], arr[1])
 */
-uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]) {
+uint16_t samb_twoarray_to_u16 (const atom_t arr[2]) {
   return samb_twoba_to_u16(arr[0], arr[1]);
 }
 #endif /* end of include guard: ADDR_INTERP_H */
@@ -1394,12 +1410,12 @@ atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16
     return alloc(atom_t, 0);
   }
   else if (a_len == a_len + b_len) {
-    return memcpy(alloc(atom_t, a_len), a, a_len);
+    return (atom_t*) memcpy(alloc(atom_t, a_len), a, a_len);
   } else if (b_len == a_len + b_len) {
-    return memcpy(alloc(atom_t, b_len), b, b_len);
+    return (atom_t*) memcpy(alloc(atom_t, b_len), b, b_len);
   }
-  atom_t* const res = memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
-  return              memcpy( res + a_len, b, b_len);
+  atom_t* const res = (atom_t*) memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
+  return              (atom_t*) memcpy( res + a_len, b, b_len);
 }
 bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
   if (len) {
@@ -1410,13 +1426,7 @@ bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t v
   return false;
 }
 atom_t* array_copy (const atom_t* const a, const uint16_t len) {
-  atom_t* result = alloc(atom_t, len);
-  if (len) {
-    for (uint16_t i = 0; i < len; i++) {
-      result[i] = a[i];
-    }
-  }
-  return result;
+  return (atom_t*) memcpy(alloc(atom_t, len),a, len);
 }
 /*
   -> char*
@@ -1472,7 +1482,7 @@ atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t
   const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
   free(z);
   const uint16_t nonzeroes = (uint16_t) (len - count_leading_zeroes);
-  return memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
+  return (atom_t*) memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
 }
 char* strndup_c (const char* const s, size_t const n) {
   const size_t len = strnlen_c(s, n);
@@ -1481,7 +1491,7 @@ char* strndup_c (const char* const s, size_t const n) {
     return NULL;
   }
   news[len] = '\0';
-  return memcpy(news, s, len);
+  return (char*) memcpy(news, s, len);
 }
 size_t strnlen_c (const char* const s, const size_t maxsize) {
   if (NULL == s) {

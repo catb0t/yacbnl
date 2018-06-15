@@ -1,21 +1,38 @@
+newoption {
+   trigger     = "lang",
+   description = "Force to compile as a language"
+}
+
 workspace "yacbnl"
   configurations { "dbg", "dist" }
 
-  language "C"
+  local ca = (_OPTIONS["lang"] or "c")
+  language (ca)
+  compileas (ca)
+
+  premake.info("compiling as " .. ca)
 
   flags { "fatalwarnings", "linktimeoptimization" }
 
   filter { "action:gmake*", "toolset:gcc"}
     buildoptions {
-      "-Wall", "-std=c11", "-Wextra", "-Wfloat-equal", "-Winline", "-Wundef", "-Werror",
+      "-Wall", "-Wextra", "-Wfloat-equal", "-Winline", "-Wundef", "-Werror",
       "-fverbose-asm", "-Wint-to-pointer-cast", "-Wshadow", "-Wpointer-arith",
       "-Wcast-align", "-Wcast-qual", "-Wunreachable-code", "-Wstrict-overflow=5",
       "-Wwrite-strings", "-Wconversion", "--pedantic-errors",
       "-Wredundant-decls", "-Werror=maybe-uninitialized",
-      "-Wmissing-declarations", "-Wmissing-parameter-type",
-      "-Wmissing-prototypes", "-Wnested-externs", "-Wold-style-declaration",
+      "-Wmissing-declarations",
+    }
+  filter { "language:c" }
+    buildoptions {
+      "-xc", "-std=c11", "-Wmissing-parameter-type",
+      "-Wmissing-prototypes",
+      "-Wnested-externs", "-Wold-style-declaration",
       "-Wold-style-definition", "-Wstrict-prototypes", "-Wpointer-sign"
     }
+
+  filter { "language:c++" }
+    buildoptions { "-xc++", "-std=c++14" }
 
   filter "configurations:dbg"
     optimize "off"
@@ -120,7 +137,7 @@ workspace "yacbnl"
     local cmd = string.format("%s %s %s", python_interp, min_exe, unmin)
     local min_contents, err = os.outputof(cmd)
     if err > 0 then
-      print("error in minifying")
+      premake.error("error in minifying")
       os.exit(1)
     end
     io.writefile(min, copyleft .. min_contents .. "\n")
@@ -131,7 +148,7 @@ workspace "yacbnl"
     local out_cmd = string.format("%s %s %s", python_interp, min_exe, header)
     local header_min, herr = os.outputof(out_cmd)
     if herr > 0 then
-      print("error in minifying")
+      premake.error("error in minifying")
       os.exit(1)
     end
     io.writefile(header_out, copyleft .. "#ifndef YACBNL_H\n#define YACBNL_H\n" .. header_min .. "\n#endif\n")

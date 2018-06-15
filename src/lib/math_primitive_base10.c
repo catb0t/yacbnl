@@ -10,7 +10,7 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
   if (0 != n[len - 1]) {
     set_out_param(out_len, len);
     // only the last digit changes, so copy all the preceding digits
-    atom_t* const result = memcpy(alloc(atom_t, len), n, (uint16_t) (len - 1));
+    atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, (uint16_t) (len - 1));
     // then take 1
     result[len - 1] = (atom_t) ((atom_t) n[len - 1] - 1);
     return result;
@@ -28,7 +28,7 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     const uint16_t count_leading_nonzeroes = array_span(n, len, false, z, 1);
     free(z);
     const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_nonzeroes);
-    atom_t* const leading_digits = memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
+    atom_t* const leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
     // take 1 from the first nonzero digit
     leading_digits[count_leading_nonzeroes - 1] = (atom_t) (leading_digits[count_leading_nonzeroes - 1] - 1);
     // space for 00321
@@ -57,9 +57,9 @@ static atom_t* impl_pred_b10_flot (const atom_t* const n, const uint16_t len, co
     // simple case: digit of interest is not 0 so just take 1
     set_out_param(out_len, len);
     set_out_param(out_int_len, int_len);
-    atom_t* const result = memcpy(alloc(atom_t, len), n, len);
+    atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, len);
     // then take 1
-    result[focus_digit] = (atom_t) ((atom_t) n[focus_digit] - 1);
+    result[focus_digit] = (atom_t) (n[focus_digit] - 1);
     return result;
   } else {
     // the digit in focus is 0

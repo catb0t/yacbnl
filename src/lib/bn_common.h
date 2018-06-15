@@ -191,6 +191,8 @@ typedef struct st_bignum_t {
 #define      bna_real_len(bna) (bna_int_len(bna) + bna_frac_len(bna) + bna_header_offset(bna))
 // the flags set for this array
 #define         bna_flags(bna) ((bna)[bna_header_offset((bna)) - 1])
+uint16_t samb_twoarray_to_u16 (const atom_t arr[2]);
+
 // the length of the integer part
 #define       bna_int_len(bna) ( bna_is_big(bna) ? samb_twoarray_to_u16((bna) + 1) : (bna)[1] )
 // the length of the fractional part
@@ -215,9 +217,9 @@ typedef struct st_bignum_t {
 // multiplies a size by the size of the typename to get the size of a space
 #define        sz(type, n) ( ((size_t) n) * (sizeof (type)) )
 // allocates, but does not clean -- a shorthand for writing malloc(n * sizeof(type))
-#define  alloc(type, size) malloc(( (size_t) size) * sizeof (type))
+#define  alloc(type, size) ((type*) malloc(( (size_t) size) * sizeof (type)))
 // same, but cleans (zeroes) the bytes with calloc
-#define zalloc(type, size) calloc(( (size_t) size),  sizeof (type))
+#define zalloc(type, size) ((type*) calloc(( (size_t) size),  sizeof (type)))
 #define     macrogetval(x) #x
 #define       stringify(x) macrogetval(x)
 
@@ -229,8 +231,12 @@ typedef struct st_bignum_t {
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
+#ifndef LOG_ITERATIONS
+  #define LOG_ITERATIONS 1
+#endif
+
 #ifndef log_b10
-  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, 1000)
+  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, LOG_ITERATIONS)
 #endif
 
 
@@ -290,7 +296,7 @@ atom_t* to_digit_array (const ldbl_t ldbl_in, const uint64_t u64, const atom_t v
 /* 2 byte addressing stuff */
 void        samb_u16_to_twoba (const uint16_t n, atom_t* const ah, atom_t* const al);
 uint16_t    samb_twoba_to_u16 (const atom_t ah, const atom_t al);
-uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
+//uint16_t samb_twoarray_to_u16 (const atom_t arr[static 2]);
 
 /* these are raw atom_t arrays, not bignum structures */
 
