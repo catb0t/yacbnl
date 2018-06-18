@@ -270,19 +270,29 @@ char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
 size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
-void say_atom_t_ptr (const atom_t* const data, const uint16_t len);
+void _say_atom_t_ptr (const atom_t* const data, const uint16_t len);
+
+#ifdef DEBUG
+  #ifndef say_atom_t_ptr
+    #define say_atom_t_ptr(data, len) do{printf("%s ", #data); _say_atom_t_ptr(data, len);}while(0)
+  #endif
+#else
+  #ifndef say_atom_t_ptr
+    #define say_atom_t_ptr(data, len)
+  #endif
+#endif
 
 uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len);
 
 bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
-atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
+atom_t*  array_concat (const atom_t* const a, const uint16_t a_len, const atom_t* const b, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t*    array_copy (const atom_t* const a, const uint16_t len);
 
 atom_t*         array_trim_leading_zeroes (const atom_t* const bn);
 atom_t*        array_trim_trailing_zeroes (const atom_t* const bn);
-atom_t* array_trim_trailing_zeroes_simple (const atom_t* const bn, const uint16_t len);
-atom_t*  array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len);
+atom_t* array_trim_trailing_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len);
+atom_t*  array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len);
 
 
 /* bignum_t */

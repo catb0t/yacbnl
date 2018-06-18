@@ -117,7 +117,7 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
   set_out_param(len, (uint16_t) (lhs_len + rhs_len) );
   set_out_param(int_len, lhs_len);
 
-  atom_t* const final_concat = array_concat(lhs_b256, rhs_b256, lhs_len, rhs_len);
+  atom_t* const final_concat = array_concat(lhs_b256, lhs_len, rhs_b256, rhs_len);
 
   free(lhs_b256), free(rhs_b256);
 

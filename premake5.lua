@@ -37,7 +37,7 @@ workspace "yacbnl"
   filter "configurations:dbg"
     optimize "off"
     symbols "on"
-    buildoptions { "-ggdb3", "-O0" }
+    buildoptions { "-ggdb3", "-O0", "-DDEBUG" }
 
   filter "configurations:dist"
     optimize "full"
@@ -76,12 +76,13 @@ workspace "yacbnl"
 
     targetdir "bin/%{cfg.buildcfg}"
     targetname "test_%{wks.name}"
+    buildoptions { "-DDEBUG" }
 
     filter "configurations:dist"
       buildoptions { "-O0", "-fomit-frame-pointer" }
 
   -- test the minified code is syntactically correct and compiles
-  project "poke_minified"
+  project "compile_minified"
     kind "consoleapp"
     files { "util/_min_test.c", "min/yacbnl.min.c" }
     links { "m" }

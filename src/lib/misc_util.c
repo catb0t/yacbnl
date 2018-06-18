@@ -216,20 +216,25 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
 
   always returns valid unique pointers
 */
-atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
-  if (! (a_len + b_len) ) {
+atom_t* array_concat (const atom_t* const a, const uint16_t a_len, const atom_t* const b, const uint16_t b_len) {
+  if (! (a_len + b_len) || NULL == a || NULL == b) {
     return alloc(atom_t, 0);
   }
 
-  else if (a_len == a_len + b_len) {
+  // b is empty ; b is not
+  else if (a_len == (a_len + b_len)) {
     return (atom_t*) memcpy(alloc(atom_t, a_len), a, a_len);
 
   } else if (b_len == a_len + b_len) {
     return (atom_t*) memcpy(alloc(atom_t, b_len), b, b_len);
   }
 
+  // copy one array
   atom_t* const res = (atom_t*) memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
-  return              (atom_t*) memcpy( res + a_len, b, b_len);
+  // and the second one
+  memcpy( res + a_len, b, b_len);
+  // and then return res, not res + a_len
+  return              (atom_t*) res;
 }
 
 bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
@@ -305,11 +310,12 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
 
   remove insignificant leading zeroes from an array of digits in any base
 */
-atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len) {
+atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len) {
   atom_t* const z = zalloc(atom_t, 1);
   const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
   free(z);
   const uint16_t nonzeroes = (uint16_t) (len - count_leading_zeroes);
+  set_out_param(out_len, nonzeroes);
   return (atom_t*) memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
 }
 
@@ -347,7 +353,7 @@ size_t str_count (const char* const str, const char find) {
   return ocur;
 }
 
-void say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
+void _say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
   printf("atom_t ptr %p+%d: ", (const void* const) data, len);
   for (uint16_t i = 0; i < len; i++) {
     printf("%d ", data[i]);

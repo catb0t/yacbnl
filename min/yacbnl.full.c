@@ -272,19 +272,29 @@ char*         strndup_c (const char* const s, size_t const n);
 char*       str_reverse (const char* const str);
 size_t        str_count (const char* const str, const char find);
 char* make_empty_string (void);
-void say_atom_t_ptr (const atom_t* const data, const uint16_t len);
+void _say_atom_t_ptr (const atom_t* const data, const uint16_t len);
+
+#ifdef DEBUG
+  #ifndef say_atom_t_ptr
+    #define say_atom_t_ptr(data, len) do{printf("%s ", #data); _say_atom_t_ptr(data, len);}while(0)
+  #endif
+#else
+  #ifndef say_atom_t_ptr
+    #define say_atom_t_ptr(data, len)
+  #endif
+#endif
 
 uint16_t array_span (const atom_t* arr, const uint16_t arr_len, const bool accept, const atom_t* const vals, const uint16_t vals_len);
 
 bool   array_contains (const atom_t* const arr, const uint16_t len, const atom_t value);
-atom_t*  array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len);
+atom_t*  array_concat (const atom_t* const a, const uint16_t a_len, const atom_t* const b, const uint16_t b_len);
 atom_t* array_reverse (const atom_t* const arr, const uint16_t len);
 atom_t*    array_copy (const atom_t* const a, const uint16_t len);
 
 atom_t*         array_trim_leading_zeroes (const atom_t* const bn);
 atom_t*        array_trim_trailing_zeroes (const atom_t* const bn);
-atom_t* array_trim_trailing_zeroes_simple (const atom_t* const bn, const uint16_t len);
-atom_t*  array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len);
+atom_t* array_trim_trailing_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len);
+atom_t*  array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len);
 
 
 /* bignum_t */
@@ -359,35 +369,17 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     result[len - 1] = (atom_t) ((atom_t) n[len - 1] - 1);
     return result;
   } else {
-    // TODO: USE array_concat
-    /*
-      12300 -> 123 -> 122 -> 12299
-      12100 -> 121 -> 120 -> 12099
-      50000 -> 5 -> 4 -> 49999
-      10000 -> 1 -> 0 -> 09999 -> 9999
-    */
-    // one or more last digits are 0
     atom_t* const z = zalloc(atom_t, 1);
-    const uint16_t count_leading_nonzeroes = array_span(n, len, false, z, 1);
+    const uint16_t count_leading_digits = array_span(n, len, false, z, 1);
     free(z);
-    const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_nonzeroes);
-    atom_t* const leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
-    // take 1 from the first nonzero digit
-    leading_digits[count_leading_nonzeroes - 1] = (atom_t) (leading_digits[count_leading_nonzeroes - 1] - 1);
-    // space for 00321
-    atom_t* const emplace_nines = alloc(atom_t, len);
-    // 00321 -> 99221
-    memcpy(emplace_nines, leading_digits, count_leading_nonzeroes);
-    free(leading_digits);
-    // emplace the needed number of nines
-    memset(emplace_nines + count_leading_nonzeroes, 9, count_trailing_zeroes);
-    // reverse: 99221 -> 12299
-    // drop any leftover leading zeroes: 0999 -> 999
-    atom_t* const final = array_trim_leading_zeroes_simple(emplace_nines, len);
-    free(emplace_nines);
-    // record if it was shortened by a digit
-    const bool shortened = (1 == n[0]) && (1 == count_leading_nonzeroes);
-    set_out_param(out_len, (uint16_t) (len - shortened));
+    atom_t* const pred_leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_digits), n, count_leading_digits);
+    pred_leading_digits[count_leading_digits - 1] = (atom_t) (pred_leading_digits[count_leading_digits - 1] - 1);
+    const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_digits);
+    atom_t* const nines = (atom_t*) memset(alloc(atom_t, count_trailing_zeroes), 9, count_trailing_zeroes);
+    atom_t* const all_digits = array_concat(pred_leading_digits, count_leading_digits, nines, count_trailing_zeroes);
+    free(nines), free(pred_leading_digits);
+    atom_t* const final = array_trim_leading_zeroes_simple(all_digits, len, out_len);
+    free(all_digits);
     return final;
   }
 }
@@ -1101,7 +1093,7 @@ atom_t* ldbl_digits_to_b256 (const char* const ldbl_digits, uint16_t* const len,
         * const rhs_b256 = str_digits_to_b256(flot_part, &rhs_len, false);
   set_out_param(len, (uint16_t) (lhs_len + rhs_len) );
   set_out_param(int_len, lhs_len);
-  atom_t* const final_concat = array_concat(lhs_b256, rhs_b256, lhs_len, rhs_len);
+  atom_t* const final_concat = array_concat(lhs_b256, lhs_len, rhs_b256, rhs_len);
   free(lhs_b256), free(rhs_b256);
   if (little_endian) {
     atom_t* const reversed = array_reverse(final_concat, *len);
@@ -1405,17 +1397,22 @@ atom_t* array_reverse (const atom_t* const arr, const uint16_t len) {
   glue two arrays together
   always returns valid unique pointers
 */
-atom_t* array_concat (const atom_t* const a, const atom_t* const b, const uint16_t a_len, const uint16_t b_len) {
-  if (! (a_len + b_len) ) {
+atom_t* array_concat (const atom_t* const a, const uint16_t a_len, const atom_t* const b, const uint16_t b_len) {
+  if (! (a_len + b_len) || NULL == a || NULL == b) {
     return alloc(atom_t, 0);
   }
-  else if (a_len == a_len + b_len) {
+  // b is empty ; b is not
+  else if (a_len == (a_len + b_len)) {
     return (atom_t*) memcpy(alloc(atom_t, a_len), a, a_len);
   } else if (b_len == a_len + b_len) {
     return (atom_t*) memcpy(alloc(atom_t, b_len), b, b_len);
   }
+  // copy one array
   atom_t* const res = (atom_t*) memcpy( alloc(atom_t, a_len + b_len) , a, a_len);
-  return              (atom_t*) memcpy( res + a_len, b, b_len);
+  // and the second one
+  memcpy( res + a_len, b, b_len);
+  // and then return res, not res + a_len
+  return              (atom_t*) res;
 }
 bool array_contains (const atom_t* const arr, const uint16_t len, const atom_t value) {
   if (len) {
@@ -1477,11 +1474,12 @@ atom_t* array_trim_trailing_zeroes (const atom_t* const bn) {
   atom_t* -> atom_t*
   remove insignificant leading zeroes from an array of digits in any base
 */
-atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len) {
+atom_t* array_trim_leading_zeroes_simple (const atom_t* const bn, const uint16_t len, uint16_t* const out_len) {
   atom_t* const z = zalloc(atom_t, 1);
   const uint16_t count_leading_zeroes = array_span(bn, len, true, z, 1);
   free(z);
   const uint16_t nonzeroes = (uint16_t) (len - count_leading_zeroes);
+  set_out_param(out_len, nonzeroes);
   return (atom_t*) memcpy(alloc(atom_t, nonzeroes), bn + count_leading_zeroes, nonzeroes);
 }
 char* strndup_c (const char* const s, size_t const n) {
@@ -1511,7 +1509,7 @@ size_t str_count (const char* const str, const char find) {
   }
   return ocur;
 }
-void say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
+void _say_atom_t_ptr (const atom_t* const data, const uint16_t len) {
   printf("atom_t ptr %p+%d: ", (const void* const) data, len);
   for (uint16_t i = 0; i < len; i++) {
     printf("%d ", data[i]);

@@ -16,36 +16,26 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     return result;
   } else {
 
-    // TODO: USE array_concat
-    /*
-      12300 -> 123 -> 122 -> 12299
-      12100 -> 121 -> 120 -> 12099
-      50000 -> 5 -> 4 -> 49999
-      10000 -> 1 -> 0 -> 09999 -> 9999
-    */
-    // one or more last digits are 0
     atom_t* const z = zalloc(atom_t, 1);
-    const uint16_t count_leading_nonzeroes = array_span(n, len, false, z, 1);
+    const uint16_t count_leading_digits = array_span(n, len, false, z, 1);
     free(z);
-    const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_nonzeroes);
-    atom_t* const leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_nonzeroes), n, count_leading_nonzeroes);
-    // take 1 from the first nonzero digit
-    leading_digits[count_leading_nonzeroes - 1] = (atom_t) (leading_digits[count_leading_nonzeroes - 1] - 1);
-    // space for 00321
-    atom_t* const emplace_nines = alloc(atom_t, len);
-    // 00321 -> 99221
-    memcpy(emplace_nines, leading_digits, count_leading_nonzeroes);
-    free(leading_digits);
-    // emplace the needed number of nines
-    memset(emplace_nines + count_leading_nonzeroes, 9, count_trailing_zeroes);
-    // reverse: 99221 -> 12299
-    // drop any leftover leading zeroes: 0999 -> 999
-    atom_t* const final = array_trim_leading_zeroes_simple(emplace_nines, len);
-    free(emplace_nines);
-    // record if it was shortened by a digit
-    const bool shortened = (1 == n[0]) && (1 == count_leading_nonzeroes);
-    set_out_param(out_len, (uint16_t) (len - shortened));
+
+    atom_t* const pred_leading_digits = (atom_t*) memcpy(alloc(atom_t, count_leading_digits), n, count_leading_digits);
+    pred_leading_digits[count_leading_digits - 1] = (atom_t) (pred_leading_digits[count_leading_digits - 1] - 1);
+
+    const uint16_t count_trailing_zeroes = (uint16_t) (len - count_leading_digits);
+    atom_t* const nines = (atom_t*) memset(alloc(atom_t, count_trailing_zeroes), 9, count_trailing_zeroes);
+
+    atom_t* const all_digits = array_concat(pred_leading_digits, count_leading_digits, nines, count_trailing_zeroes);
+
+    free(nines), free(pred_leading_digits);
+
+    atom_t* const final = array_trim_leading_zeroes_simple(all_digits, len, out_len);
+
+    free(all_digits);
+
     return final;
+
   }
 }
 
