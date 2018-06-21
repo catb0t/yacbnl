@@ -35,7 +35,6 @@ static atom_t* impl_pred_b10_int (const atom_t* const n, const uint16_t len, uin
     free(all_digits);
 
     return final;
-
   }
 }
 
@@ -44,9 +43,11 @@ static atom_t* impl_pred_b10_flot (const atom_t* const n, const uint16_t len, co
   // preicision may be 0 to subtract 1 from a real
   const uint16_t focus_digit = (uint16_t) ((int_len + precision) - 1);
   if ( 0 != n[focus_digit] ) {
-    // simple case: digit of interest is not 0 so just take 1
+    // simple case: digit of interest is not 0
+    // length doesn't change
     set_out_param(out_len, len);
     set_out_param(out_int_len, int_len);
+    // copy the input entirely
     atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, len);
     // then take 1
     result[focus_digit] = (atom_t) (n[focus_digit] - 1);
@@ -80,7 +81,7 @@ static atom_t* impl_pred_b10_flot (const atom_t* const n, const uint16_t len, co
     before 0.99 pr=2 is 0.98
 */
 atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len) {
-  if ( (len == int_len && raw_is_zero(n, int_len) ) || raw_is_zero(n, len) ) {
+  if ( len < int_len || raw_is_zero(n, len) ) {
     set_out_param(out_len, 0);
     return zalloc(atom_t, 1);
   }
@@ -93,10 +94,56 @@ atom_t* pred_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_
 }
 
 static atom_t* impl_succ_b10_int (const atom_t* const n, const uint16_t len, uint16_t* const out_len) {
-  puts("UNIMPLEMENTED");
+  if (9 != n[len - 1]) {
+    // just add 1 to last digit
+    set_out_param(out_len, len);
+    // copy the input entirely
+    atom_t* const result = (atom_t*) memcpy(alloc(atom_t, len), n, len);
+    // then add 1
+    result[len - 1] = (atom_t) (n[len - 1] + 1);
+    return result;
+  } else {
+
+    atom_t* const reversed = array_reverse(n, len);
+    atom_t* const nine = memset(alloc(atom_t, 1), 9, 1);
+    // count trailing nines
+    const uint16_t count_nines = array_span(reversed, len, true, nine, 1);
+    free(nine), free(reversed);
+
+    const uint16_t other_digits_pre_len = (uint16_t) (len - count_nines);
+    const uint16_t other_digits_len = 0 == other_digits_pre_len ? 1 : other_digits_pre_len;
+
+    atom_t* const zeroes = zalloc(atom_t, count_nines);
+    atom_t* other_digits;
+
+    if (0 == other_digits_pre_len) {
+      // other_digits_len is 1 for a certain reason here
+      atom_t* const one_zero = zalloc(atom_t, 1);
+      other_digits = memcpy(alloc(atom_t, other_digits_len), one_zero, other_digits_len);
+      free(one_zero);
+      set_out_param(out_len, (uint16_t) (len + 1));
+    } else {
+      // other_digits_len might be 1 here
+      other_digits = memcpy(alloc(atom_t, other_digits_len), reversed, other_digits_len);
+      set_out_param(out_len, len);
+    }
+
+    // add 1 to the last non-nine digit
+    other_digits[other_digits_len - 1] = (atom_t) (other_digits[other_digits_len - 1] + 1);
+
+    atom_t* const result = array_concat(other_digits, other_digits_len, zeroes, count_nines);
+    free(zeroes), free(other_digits);
+    return result;
+  }
+}
+
+static atom_t* impl_succ_b10_flot (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len) {
   (void) n;
   (void) len;
+  (void) precision;
+  (void) int_len;
   (void) out_len;
+  (void) out_int_len;
   return NULL;
 }
 
@@ -104,16 +151,18 @@ static atom_t* impl_succ_b10_int (const atom_t* const n, const uint16_t len, uin
   atom_t*, uint16_t -> atom_t*, uint16_t
 */
 atom_t* succ_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, const uint16_t precision, uint16_t* const out_len, uint16_t* const out_int_len) {
-  if ( raw_is_zero(n, len) ) {
+  if ( len < int_len || raw_is_zero(n, len) ) {
     set_out_param(out_len, 1);
     atom_t* const res = alloc(atom_t, 1);
     res[0] = 1;
     return res;
   }
-  (void) precision;
-  (void) int_len;
-  (void) out_int_len;
-  return NULL;
+
+  if (len == int_len && 0 == precision) {
+    return impl_succ_b10_int(n, len, out_len);
+  } else {
+    return impl_succ_b10_flot(n, len, int_len, precision, out_len, out_int_len);
+  }
 }
 
 atom_t* add_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len) {

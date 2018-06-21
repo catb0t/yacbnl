@@ -38,3 +38,11 @@ Test(mathpr_b10, flot_pred) {
   cr_assert_arr_eq(a1, f, 3);
   free(f);
 }
+
+Test(mathpr_b10, int_succ) {
+  const atom_t a[] = { 1, 2, 3 };
+  atom_t* f = succ_b10(a, 3, 3, 0, NULL, NULL);
+  const atom_t a1[] = { 1, 2, 4 };
+  cr_assert_arr_eq(a1, f, 3);
+  free(f);
+}

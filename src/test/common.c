@@ -67,26 +67,26 @@ Test(common, concat) {
   static const atom_t b[1] = {0};
   static const atom_t b1[1] = {0};
   t = array_concat(b, 1, b1, 1);
-  say_atom_t_ptr(t, 2);
+  //say_atom_t_ptr(t, 2);
   cr_assert(t[0] == 0 && t[1] == 0);
 
   free(t);
   atom_t* d = alloc(atom_t, 0);
   static const atom_t d1[1] = {0};
   t = array_concat(d, 0, d1, 1);
-  say_atom_t_ptr(t, 1);
+  //say_atom_t_ptr(t, 1);
   cr_assert(t[0] == 0);
 
   free(t);
   t = array_concat(d1, 1, d, 0);
-  say_atom_t_ptr(t, 1);
+  //say_atom_t_ptr(t, 1);
   cr_assert(t[0] == 0);
 
   free(t);
   static const atom_t c[4] = {100, 200, 123, 0};
   static const atom_t c1[3] = {5, 6, 7};
   t = array_concat(c, 4, c1, 3);
-  say_atom_t_ptr(t, 7);
+  //say_atom_t_ptr(t, 7);
   static const atom_t cres[] = {100, 200, 123, 0, 5, 6, 7};
   cr_assert_arr_eq(cres, t, 7);
 }

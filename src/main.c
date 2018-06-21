@@ -4,7 +4,14 @@
 int main(void) {
   puts("main");
 
-  const atom_t a[] = { 1 };
+  const atom_t a[] = { 1, 2, 3 };
+  atom_t* f = succ_b10(a, 3, 3, 0, NULL, NULL);
+  const atom_t a1[] = { 1, 2, 4 };
+  say_atom_t_ptr(f, 3);
+  say_atom_t_ptr(a1, 3);
+  free(f);
+
+/*  const atom_t a[] = { 1 };
   atom_t* f = pred_b10(a, 1, 1, 0, NULL, NULL);
   say_atom_t_ptr(f, 1);
   free(f);
@@ -37,7 +44,7 @@ int main(void) {
   //const atom_t a1[] = { 1, 2, 2 };
   say_atom_t_ptr(f, 3);
   free(f);
-
+*/
   return EXIT_SUCCESS;
 
   //const ldbl_t max = LDBL_MAX;
