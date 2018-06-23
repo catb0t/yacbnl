@@ -66,7 +66,8 @@ static uint8_t msb (const uint64_t t) {
 }
 
 // https://stackoverflow.com/a/44232045
-static ld ln_naive (const ld y) {
+ld ln_naive (const ld y);
+ld ln_naive (const ld y) {
   const uint64_t log2 = msb((uint64_t) y); // See: https://stackoverflow.com/a/4970859/6630230
   const ld divisor = (ld) (1 << log2);
   const ld x = y / divisor;    // normalized value between [1.0, 2.0]
@@ -94,12 +95,61 @@ static ld ln_iter (const ld x, const uint64_t iters) {
   return 2 * total;
 }
 
+uint64_t factorial (const uint64_t a);
+static uint64_t _fac (const uint64_t a) {
+  return a < 2 ? 1 : a * factorial(a - 1);
+}
+
+uint64_t factorial (const uint64_t a) {
+  switch (a) {
+    case 1: return 1;
+    case 2: return 2;
+    case 3: return 6;
+    case 4: return 24;
+    case 5: return 120;
+    case 6: return 720;
+    case 7: return 5040;
+    case 8: return 40320;
+    case 9: return 362880;
+    case 10: return 3628800;
+    default: return _fac(a);
+  }
+}
+
+static ld pow_int (const ld a, const uint64_t b) {
+  ld res = 1;
+  for (uint64_t i = 0; i < b; i++) {
+    res = res * a;
+  }
+  return res;
+}
+
+// 1 + sum from n=1 to 10 of (1/n!) * (ln(a) * b)^n
+static ld pow_taylor (const ld a, const ld b, const uint8_t iters) {
+  ld sum = 0;
+  for (uint8_t i = 1; i < iters + 1; i++) {
+    sum += (1.f / (ld) factorial(i)) * pow_int(b * ln_iter(a, 1000), i);
+  }
+  return 1 + sum;
+}
+
+static ld pow_ (const ld a, const ld b, const uint8_t iters) {
+  return pow_int(a, (uint64_t) b) * pow_taylor(a, b - (uint64_t) b, iters);
+}
+
 int main(void) {
+/*
   printf("N     %Lg\n", (ld) ln_naive(43.2f));
   printf("I1    %Lg\n", (ld) ln_iter(43.2f, 1));
   printf("I10   %Lg\n", (ld) ln_iter(43.2f, 10));
   printf("I100  %Lg\n", (ld) ln_iter(43.2f, 100));
+*/
   printf("I1000 %Lg\n", (ld) ln_iter(43.2f, 1000));
   printf("A     %Lg\n", (ld) logl(43.2f));
+
+  //printf("%Lg\n", pow_int(2.5, 3));
+  printf("A     %.20Lg\n", powl(2, 3.1));
+  printf("10    %.20Lg\n", pow_(2, 3.1, 10));
+  printf("20    %.20Lg\n", pow_(2, 3.1, 9));
   return 0;
 }

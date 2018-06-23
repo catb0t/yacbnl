@@ -231,14 +231,29 @@ uint16_t samb_twoarray_to_u16 (const atom_t arr[2]);
   #define string_is_sempty(str, n) (NULL == str || ! strnlen_c(str, n))
 #endif
 
-#ifndef LOG_ITERATIONS
-  #define LOG_ITERATIONS 1
+#ifndef MATH_TAYLOR_ITERATIONS
+  #ifdef DEBUG
+    #define MATH_TAYLOR_ITERATIONS 1
+  #else
+    #define MATH_TAYLOR_ITERATIONS 1000
+  #endif
 #endif
 
 #ifndef log_b10
-  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, LOG_ITERATIONS)
+  #define log_b10(a, b, c, d, e) impl_log_b10(a, b, c, d, e, MATH_TAYLOR_ITERATIONS)
 #endif
 
+#ifndef pow_b10
+  #define pow_b10(a, b, c, d, e) impl_pow_b10(a, b, c, d, e, MATH_TAYLOR_ITERATIONS)
+#endif
+
+#ifndef min
+  #define min(a, b) (a < b ? a : b)
+#endif
+
+#ifndef max
+  #define max(a, b) (a > b ? a : b)
+#endif
 
 /* individual values */
 typedef enum {
@@ -345,11 +360,16 @@ atom_t* add_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_i
 atom_t* sub_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* mul_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* div_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
-atom_t* pow_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* impl_pow_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 
 atom_t* times2_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* sq_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* recip_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
 atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+atom_t* ceil_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len);
+
+atom_t cmp_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len);
+
+atom_t* factorial_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* out_int_len);
 
 #endif /* end of include guard: BN_COMMON_H */

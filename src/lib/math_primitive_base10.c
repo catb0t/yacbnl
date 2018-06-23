@@ -217,7 +217,7 @@ atom_t* div_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_i
   return NULL;
 }
 
-atom_t* pow_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
+atom_t* impl_pow_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
   puts("UNIMPLEMENTED");
   (void) a;
   (void) a_len;
@@ -249,24 +249,94 @@ atom_t* sq_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_le
   (void) out_int_len;
   return NULL;
 }
-atom_t* recip_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
-  puts("UNIMPLEMENTED");
-  (void) n;
-  (void) len;
-  (void) int_len;
-  (void) out_len;
-  (void) out_int_len;
+
+// 0 means a is greater, 1 means equal, 2 means b is greater
+atom_t cmp_b10 (const atom_t* const a, const uint16_t a_len, const uint16_t a_int_len, const atom_t* const b, const uint16_t b_len, const uint16_t b_int_len) {
+
+  if (a_int_len == b_int_len && a_len == b_len) {
+    // need a more complicated comparison because the magnitudes are the same and we have to test all digits
+  /*    const uint16_t max_len = max(a_len, b_len),
+                     min_len = min(a_len, b_len),
+                     max_int_len = max(a_int_len, b_int_len),
+                     min_int_len = min(a_int_len, b_int_len);
+  */
+    for (size_t i = 0; i < a_int_len; i++) {
+      const atom_t a_i = a[i], b_i = b[i];
+      if (a_i > b_i) {
+        return 0;
+      } else if (b_i > a_i) {
+        return 2;
+      }
+    }
+
+    return 1;
+
+  } else if (a_int_len > b_int_len) {
+    return 0;
+  } else if (b_int_len > a_int_len) {
+    return 2;
+  } else {
+    // int lens are the same, flot lens are not
+    return 1;
+  }
+}
+
+static atom_t* impl_factorial_b10 (const atom_t* const n, const uint16_t len, uint16_t* const out_len) {
+
+  uint16_t mul_holder_len = 0, i_len = 0;
+
+  atom_t *zero = zalloc(atom_t, 1), *mul_holder, *i = array_copy(n, len);
+  while ( cmp_b10(i, i_len, i_len, zero, 1, 1) ) {
+
+    atom_t* const temp_mul_holder = array_copy(mul_holder, mul_holder_len);
+    free(mul_holder);
+    mul_holder = mul_b10(temp_mul_holder, mul_holder_len, mul_holder_len, i, i_len, i_len, &mul_holder_len, NULL);
+
+    i = pred_b10(i, i_len, i_len, 0, &i_len, NULL);
+  }
+  set_out_param(out_len, 0);
   return NULL;
 }
 
-atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
-  puts("UNIMPLEMENTED");
-  (void) n;
-  (void) len;
+atom_t* factorial_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* out_int_len) {
   (void) int_len;
-  (void) out_len;
   (void) out_int_len;
+  (void) impl_factorial_b10(n, len, out_len);
   return NULL;
+}
+
+atom_t* recip_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
+  atom_t* const one = alloc(atom_t, 1);
+  one[0] = 1;
+
+  atom_t* const recip = div_b10(one, 1, 1, n, len, int_len, out_len, out_int_len);
+
+  free(one);
+
+  return recip;
+}
+
+atom_t* floor_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
+  if (0 == (len + int_len) || len < int_len || NULL == n || raw_is_zero(n, len)) {
+    set_out_param(out_len, 1);
+    set_out_param(out_int_len, 1);
+    return zalloc(atom_t, 1);
+  }
+  set_out_param(out_len, int_len);
+  set_out_param(out_int_len, int_len);
+
+  return memcpy(alloc(atom_t, int_len), n, int_len);
+}
+
+atom_t* ceil_b10 (const atom_t* const n, const uint16_t len, const uint16_t int_len, uint16_t* const out_len, uint16_t* const out_int_len) {
+  if (0 == (len + int_len) || len < int_len || NULL == n || raw_is_zero(n, len)) {
+    set_out_param(out_len, 1);
+    set_out_param(out_int_len, 1);
+    return zalloc(atom_t, 1);
+  }
+
+  // next integer
+  return succ_b10(n, int_len, int_len, 0, out_len, out_len);
 }
 
 // i would like 10 digits of precision. is that too much to ask?
